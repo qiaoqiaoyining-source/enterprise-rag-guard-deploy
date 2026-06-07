@@ -58,7 +58,22 @@ outputs/baseline_rag/baseline_prompts.jsonl
 outputs/baseline_rag/baseline_summary.json
 ```
 
+## Run Local Web Demo
+
+Start the local demo server:
+
+```bash
+python3 rag_demo_server.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The page lets you enter a question, run the no-defense baseline RAG pipeline, and inspect the answer, retrieved chunks, similarity scores, context, and prompt.
+
 ## Notes
 
 This is intentionally a no-defense baseline. It does not apply prompt-injection filtering, instruction isolation, citation verification, or second-pass validation. Those mechanisms can be added later for comparison.
-
