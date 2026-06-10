@@ -311,12 +311,6 @@ The final editable presentation is in:
 deliverables/prompt-injection-rag-final.pptx
 ```
 
-The Chinese Genspark slide-generation brief is in:
-
-```text
-docs/genspark_ppt_brief_zh.md
-```
-
 Do not commit API keys to the repository.
 
 ## Output Files
