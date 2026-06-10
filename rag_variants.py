@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import os
@@ -366,6 +367,91 @@ class HybridRetriever(Retriever):
         return [make_retrieved_chunk(self.chunks[index], rank, scores[index]) for rank, index in enumerate(ranked_indices, start=1)]
 
 
+def dense_cosine_similarity(vector_a: list[float], vector_b: list[float]) -> float:
+    dot = sum(a * b for a, b in zip(vector_a, vector_b))
+    norm_a = math.sqrt(sum(a * a for a in vector_a))
+    norm_b = math.sqrt(sum(b * b for b in vector_b))
+    if norm_a == 0 or norm_b == 0:
+        return 0.0
+    return dot / (norm_a * norm_b)
+
+
+def openai_compatible_post(endpoint: str, payload: dict[str, object], api_key: str, timeout: int, retries: int) -> dict[str, object]:
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    last_error: Exception | None = None
+    for attempt in range(retries + 1):
+        request = urllib.request.Request(endpoint, data=body, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            try:
+                error_body = exc.read().decode("utf-8")
+            except Exception:
+                error_body = ""
+            last_error = RuntimeError(f"HTTP {exc.code} {exc.reason}: {error_body}")
+            if attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+        except (urllib.error.URLError, TimeoutError, KeyError, json.JSONDecodeError) as exc:
+            last_error = exc
+            if attempt < retries:
+                time.sleep(1.5 * (attempt + 1))
+    raise RuntimeError(f"Embedding request failed: {last_error}")
+
+
+class EmbeddingRetriever(Retriever):
+    name = "embedding"
+
+    def __init__(self, chunks: list[Chunk], args: argparse.Namespace) -> None:
+        self.chunks = chunks
+        self.args = args
+        self.embedding_model = args.embedding_model
+        self.endpoint = args.embedding_base_url.rstrip("/")
+        if not self.endpoint.endswith("/embeddings"):
+            self.endpoint += "/embeddings"
+        self.api_key = args.api_key or os.getenv(args.embedding_api_key_env) or os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            raise RuntimeError(f"Embedding API key not found. Set {args.embedding_api_key_env}/OPENAI_API_KEY or pass --api-key.")
+        self.cache_dir = Path(args.embedding_cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.chunk_vectors = self._load_or_build_chunk_vectors()
+
+    def _cache_path(self) -> Path:
+        joined = "|".join(chunk.chunk_id + ":" + chunk.retrieval_text for chunk in self.chunks)
+        digest = hashlib.sha256((self.embedding_model + joined).encode("utf-8")).hexdigest()[:16]
+        safe_model = re.sub(r"[^A-Za-z0-9_.-]", "_", self.embedding_model)
+        return self.cache_dir / f"chunk_embeddings_{safe_model}_{digest}.json"
+
+    def _load_or_build_chunk_vectors(self) -> list[list[float]]:
+        cache_path = self._cache_path()
+        if cache_path.exists():
+            return json.loads(cache_path.read_text(encoding="utf-8"))
+        texts = [chunk.retrieval_text for chunk in self.chunks]
+        vectors = self._embed_texts(texts)
+        cache_path.write_text(json.dumps(vectors), encoding="utf-8")
+        return vectors
+
+    def _embed_texts(self, texts: list[str], batch_size: int = 16) -> list[list[float]]:
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), batch_size):
+            batch = texts[start : start + batch_size]
+            payload = {"model": self.embedding_model, "input": batch}
+            data = openai_compatible_post(self.endpoint, payload, self.api_key, self.args.embedding_timeout, self.args.embedding_retries)
+            embeddings = [item["embedding"] for item in sorted(data["data"], key=lambda item: item["index"])]
+            vectors.extend(embeddings)
+        return vectors
+
+    def retrieve(self, question: str, top_k: int) -> list[RetrievedChunk]:
+        query_vector = self._embed_texts([question])[0]
+        scores = [dense_cosine_similarity(query_vector, vector) for vector in self.chunk_vectors]
+        ranked_indices = sorted(range(len(scores)), key=lambda index: scores[index], reverse=True)[:top_k]
+        return [make_retrieved_chunk(self.chunks[index], rank, float(scores[index])) for rank, index in enumerate(ranked_indices, start=1)]
+
+
 def normalize_scores(scores: list[float]) -> list[float]:
     if not scores:
         return []
@@ -579,7 +665,7 @@ def post_llm_request(endpoint: str, payload: dict[str, object], extra_headers: d
     raise RuntimeError(f"LLM request failed: {last_error}")
 
 
-def build_retriever(variant: str, chunks: list[Chunk]) -> Retriever | None:
+def build_retriever(variant: str, chunks: list[Chunk], args: argparse.Namespace) -> Retriever | None:
     if variant in {"rag3_llm_only"}:
         return None
     if variant in {"rag1_tfidf", "rag4_tfidf_llm"}:
@@ -588,6 +674,8 @@ def build_retriever(variant: str, chunks: list[Chunk]) -> Retriever | None:
         return BM25Retriever(chunks)
     if variant in {"rag6_hybrid_llm"}:
         return HybridRetriever(chunks)
+    if variant in {"rag7_embedding_llm"}:
+        return EmbeddingRetriever(chunks, args)
     raise ValueError(f"Unknown variant: {variant}")
 
 
@@ -604,14 +692,14 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
 def run(args: argparse.Namespace) -> None:
     chunks = load_chunks(Path(args.chunks), [Path(path) for path in args.extra_chunks])
     questions = load_questions(Path(args.questions) if args.questions else None)
-    retriever = build_retriever(args.variant, chunks)
+    retriever = build_retriever(args.variant, chunks, args)
     outdir = Path(args.outdir) / args.variant
     outdir.mkdir(parents=True, exist_ok=True)
 
     result_rows: list[dict[str, object]] = []
     retrieval_rows: list[dict[str, object]] = []
     prompt_rows: list[dict[str, object]] = []
-    llm_variants = {"rag3_llm_only", "rag4_tfidf_llm", "rag5_bm25_llm", "rag6_hybrid_llm"}
+    llm_variants = {"rag3_llm_only", "rag4_tfidf_llm", "rag5_bm25_llm", "rag6_hybrid_llm", "rag7_embedding_llm"}
 
     for question in questions:
         if retriever is None:
@@ -664,7 +752,7 @@ def run(args: argparse.Namespace) -> None:
         "top_k": args.top_k,
         "max_context_chars": args.max_context_chars,
         "outputs": ["results.csv", "retrievals.csv", "prompts.jsonl", "summary.json"],
-        "llm_model": args.model if args.variant in {"rag3_llm_only", "rag4_tfidf_llm", "rag5_bm25_llm", "rag6_hybrid_llm"} else "",
+        "llm_model": args.model if args.variant in llm_variants else "",
         "note": "No prompt-injection defense is applied in any variant.",
     }
     (outdir / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -675,7 +763,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run handbook RAG variants for baseline and attack experiments.")
     parser.add_argument(
         "--variant",
-        choices=["rag1_tfidf", "rag2_bm25", "rag3_llm_only", "rag4_tfidf_llm", "rag5_bm25_llm", "rag6_hybrid_llm"],
+        choices=["rag1_tfidf", "rag2_bm25", "rag3_llm_only", "rag4_tfidf_llm", "rag5_bm25_llm", "rag6_hybrid_llm", "rag7_embedding_llm"],
         default="rag1_tfidf",
     )
     parser.add_argument("--chunks", default="handbook-main/chunks.csv")
@@ -698,6 +786,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=700, help="Maximum generated tokens.")
     parser.add_argument("--llm-timeout", type=int, default=60)
     parser.add_argument("--llm-retries", type=int, default=1)
+    parser.add_argument("--embedding-base-url", default=os.getenv("OPENAI_API_BASE") or "https://api.deepseek.com/v1")
+    parser.add_argument("--embedding-model", default=os.getenv("EMBEDDING_MODEL") or "text-embedding-3-small")
+    parser.add_argument("--embedding-api-key-env", default="OPENAI_API_KEY")
+    parser.add_argument("--embedding-timeout", type=int, default=60)
+    parser.add_argument("--embedding-retries", type=int, default=1)
+    parser.add_argument("--embedding-cache-dir", default="outputs/embedding_cache")
     return parser.parse_args()
 
 
