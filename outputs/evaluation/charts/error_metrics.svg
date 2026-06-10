@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620">
+<rect width="100%" height="100%" fill="#F8FAFC"/>
+<text x="120" y="48" font-family="Arial" font-size="30" font-weight="700" fill="#0F172A">Repair produces the lowest ASR; full stack has the lowest citation error</text>
+<line x1="120" y1="495.0" x2="980" y2="495.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="102" y="500.0" text-anchor="end" font-family="Arial" font-size="16" fill="#64748B">0%</text>
+<line x1="120" y1="417.0" x2="980" y2="417.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="102" y="422.0" text-anchor="end" font-family="Arial" font-size="16" fill="#64748B">20%</text>
+<line x1="120" y1="339.0" x2="980" y2="339.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="102" y="344.0" text-anchor="end" font-family="Arial" font-size="16" fill="#64748B">40%</text>
+<line x1="120" y1="261.0" x2="980" y2="261.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="102" y="266.0" text-anchor="end" font-family="Arial" font-size="16" fill="#64748B">60%</text>
+<line x1="120" y1="183.0" x2="980" y2="183.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="102" y="188.0" text-anchor="end" font-family="Arial" font-size="16" fill="#64748B">80%</text>
+<line x1="120" y1="105.0" x2="980" y2="105.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="102" y="110.0" text-anchor="end" font-family="Arial" font-size="16" fill="#64748B">100%</text>
+<rect x="191.3" y="292.8" width="64.0" height="202.2" rx="4" fill="#DC2626"/>
+<text x="223.3" y="283.8" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#0F172A">51.8%</text>
+<rect x="263.3" y="418.7" width="64.0" height="76.3" rx="4" fill="#EA580C"/>
+<text x="295.3" y="409.7" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#0F172A">19.6%</text>
+<text x="263.3" y="533" text-anchor="middle" font-family="Arial" font-size="17" font-weight="600" fill="#0F172A">Control</text>
+<rect x="478.0" y="307.2" width="64.0" height="187.8" rx="4" fill="#DC2626"/>
+<text x="510.0" y="298.2" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#0F172A">48.1%</text>
+<rect x="550.0" y="471.4" width="64.0" height="23.6" rx="4" fill="#EA580C"/>
+<text x="582.0" y="462.4" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#0F172A">6.1%</text>
+<text x="550.0" y="533" text-anchor="middle" font-family="Arial" font-size="17" font-weight="600" fill="#0F172A">Full stack</text>
+<rect x="764.7" y="321.7" width="64.0" height="173.3" rx="4" fill="#DC2626"/>
+<text x="796.7" y="312.7" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#0F172A">44.4%</text>
+<rect x="836.7" y="452.8" width="64.0" height="42.2" rx="4" fill="#EA580C"/>
+<text x="868.7" y="443.8" text-anchor="middle" font-family="Arial" font-size="15" font-weight="700" fill="#0F172A">10.8%</text>
+<text x="836.7" y="533" text-anchor="middle" font-family="Arial" font-size="17" font-weight="600" fill="#0F172A">Repair</text>
+<rect x="120" y="560" width="18" height="18" rx="3" fill="#DC2626"/>
+<text x="148" y="575" font-family="Arial" font-size="16" fill="#0F172A">Attack success rate</text>
+<rect x="330" y="560" width="18" height="18" rx="3" fill="#EA580C"/>
+<text x="358" y="575" font-family="Arial" font-size="16" fill="#0F172A">Citation error rate</text>
+<text x="980" y="575" text-anchor="end" font-family="Arial" font-size="14" fill="#64748B">lower is better</text>
+</svg>

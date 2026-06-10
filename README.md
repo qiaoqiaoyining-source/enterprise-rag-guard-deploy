@@ -13,6 +13,7 @@ Current version summary:
 - `rag_variants.py` is the main runner for the seven no-defense baseline configurations.
 - `defended_variants.py` is the main runner for Part D defended configurations.
 - `evaluate_results.py` provides a lightweight proxy evaluator for result CSV files.
+- `evaluate_part_e.py` produces final safety/utility metrics, attack breakdowns, and charts.
 - `run_experiment_matrix.py` runs the baseline matrix, selects the strongest no-defense control, and runs defense ablations.
 - `outputs/baselines/` is the main results directory for direct baseline runs.
 - `outputs/defenses/` is the results directory for defended runs.
@@ -48,6 +49,7 @@ Current version summary:
 └── docs/
     ├── c_part_baseline.md
     ├── d_part_defense.md
+    ├── final_project_report.md
     └── rag_variants_and_attack_data.md
 ```
 
@@ -295,6 +297,24 @@ Detailed design notes are in:
 
 ```text
 docs/d_part_defense.md
+```
+
+The integrated Part E report is in:
+
+```text
+docs/final_project_report.md
+```
+
+The final editable presentation is in:
+
+```text
+deliverables/prompt-injection-rag-final.pptx
+```
+
+The Chinese Genspark slide-generation brief is in:
+
+```text
+docs/genspark_ppt_brief_zh.md
 ```
 
 Do not commit API keys to the repository.
