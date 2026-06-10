@@ -1,3 +1,4 @@
+[README.md](https://github.com/user-attachments/files/28786710/README.md)
 # Prompt Injection RAG Handbook Project
 
 Course project on prompt injection attacks and defenses for retrieval-augmented generation (RAG) over an employee handbook knowledge base.
@@ -10,7 +11,10 @@ Current version summary:
 
 - `baseline_rag.py` is the historical single baseline entry point.
 - `rag_variants.py` is the main runner for the six no-defense baseline configurations.
+- `defended_variants.py` is the main runner for Part D defended configurations.
+- `evaluate_results.py` provides a lightweight proxy evaluator for result CSV files.
 - `outputs/baselines/` is the main results directory for the six baseline runs.
+- `outputs/defenses/` is the results directory for defended runs.
 - `outputs/baseline_rag/` is kept as historical output from the original baseline script.
 
 ## Repository Structure
@@ -20,6 +24,8 @@ Current version summary:
 ├── baseline_rag.py
 ├── rag_variants.py
 ├── rag_demo_server.py
+├── defended_variants.py
+├── evaluate_results.py
 ├── handbook-main/
 │   ├── chunks.csv
 │   ├── adversarial_poisoned_chunks.csv
@@ -38,6 +44,7 @@ Current version summary:
 │   └── baselines/             # current output root for the six baseline configurations
 └── docs/
     ├── c_part_baseline.md
+    ├── d_part_defense.md
     └── rag_variants_and_attack_data.md
 ```
 
@@ -184,6 +191,63 @@ python3 rag_variants.py \
   --extra-chunks handbook-main/adversarial_poisoned_chunks.csv
 ```
 
+## Part D Defenses
+
+The recommended no-defense control for Part D is:
+
+```text
+rag6_hybrid_llm
+```
+
+Main defended runner:
+
+```text
+defended_variants.py
+```
+
+Supported defended variants:
+
+| Variant | Retrieval | Generation | Purpose |
+| --- | --- | --- | --- |
+| `defended_bm25_local` | BM25 | local extractive | fully local defended baseline |
+| `defended_hybrid_local` | TF-IDF + BM25 fusion | local extractive | stronger local defended baseline |
+| `defended_hybrid_llm` | TF-IDF + BM25 fusion | LLM | main defended comparison against `rag6_hybrid_llm` |
+| `defended_embedding_llm` | embedding retrieval | LLM | stronger experimental defended variant |
+
+Run the main local defended baseline:
+
+```bash
+python3 defended_variants.py \
+  --variant defended_hybrid_local \
+  --questions questions/evaluation_questions_v2.csv \
+  --extra-chunks handbook-main/adversarial_poisoned_chunks.csv
+```
+
+Run the main defended LLM baseline:
+
+```bash
+python3 defended_variants.py \
+  --variant defended_hybrid_llm \
+  --questions questions/evaluation_questions_v2.csv \
+  --extra-chunks handbook-main/adversarial_poisoned_chunks.csv \
+  --enable-llm-repair
+```
+
+Run the experimental defended embedding variant:
+
+```bash
+python3 defended_variants.py \
+  --variant defended_embedding_llm \
+  --questions questions/evaluation_questions_v2.csv \
+  --extra-chunks handbook-main/adversarial_poisoned_chunks.csv
+```
+
+Detailed design notes are in:
+
+```text
+docs/d_part_defense.md
+```
+
 Do not commit API keys to the repository.
 
 ## Output Files
@@ -209,6 +273,15 @@ outputs/baselines/rag3_llm_only/
 outputs/baselines/rag4_tfidf_llm/
 outputs/baselines/rag5_bm25_llm/
 outputs/baselines/rag6_hybrid_llm/
+```
+
+Defended configurations write to:
+
+```text
+outputs/defenses/defended_bm25_local/
+outputs/defenses/defended_hybrid_local/
+outputs/defenses/defended_hybrid_llm/
+outputs/defenses/defended_embedding_llm/
 ```
 
 Each new variant produces:
