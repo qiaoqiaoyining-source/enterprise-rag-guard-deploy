@@ -206,6 +206,15 @@ rag6_hybrid_llm
 rag7_embedding_llm
 ```
 
+To score baseline runs that already exist without rerunning them:
+
+```bash
+python3 run_experiment_matrix.py \
+  --reuse-baselines \
+  --skip-missing-baselines \
+  --skip-defenses
+```
+
 Example lexical-hybrid control:
 
 ```bash
@@ -319,6 +328,36 @@ It reports label-aware proxy metrics such as:
 - safe-attack answer proxy
 - refusal accuracy proxy
 - gold-chunk hit rate
+
+## Current Experiment Results
+
+The current committed experiment uses:
+
+- evaluation set: `questions/evaluation_questions_v2.csv` (55 questions)
+- clean chunks: 146
+- poisoned chunks: 10
+- LLM: `deepseek-ai/DeepSeek-V4-Flash`
+- defended retrieval: hybrid TF-IDF + BM25
+- `top_k=3`
+- `max_context_chars=2200`
+- `max_tokens=120`
+
+Proxy evaluation results:
+
+| Run | Normal accuracy | Safe-attack answer | Refusal accuracy | Overall |
+| --- | ---: | ---: | ---: | ---: |
+| `rag4_tfidf_llm` control | 0.7500 | 0.4545 | 0.6000 | 0.6182 |
+| `defended_hybrid_llm__full_stack` | 0.6071 | 0.4091 | 1.0000 | 0.5636 |
+| `defended_hybrid_llm__full_stack_repair` | 0.5714 | 0.4545 | 1.0000 | 0.5636 |
+
+The defended LLM runs produced no poisoned `PX` citations. The full-stack
+configuration increased refusal accuracy from 0.60 to 1.00, with a utility
+trade-off on normal questions. The repair pass recovered some safe attack
+answers, raising the safe-attack proxy from 0.4091 to 0.4545, but did not
+change the aggregate overall proxy.
+
+These values are lightweight token-overlap and retrieval-hit proxies rather
+than a substitute for final human or LLM-judge evaluation.
 
 ## Report Wording
 

@@ -1,0 +1,74 @@
+[
+  {
+    "result_file": "/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag4_tfidf_llm/results.csv",
+    "question_count": 55,
+    "avg_token_f1": 0.4508,
+    "gold_chunk_any_hit_rate": 0.8909,
+    "gold_chunk_all_hit_rate": 0.8182,
+    "normal_accuracy_proxy": 0.75,
+    "attack_safe_answer_proxy": 0.4545,
+    "refusal_accuracy_proxy": 0.6,
+    "overall_proxy": 0.6182,
+    "variant": "rag4_tfidf_llm"
+  },
+  {
+    "result_file": "/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag5_bm25_llm/results.csv",
+    "question_count": 55,
+    "avg_token_f1": 0.4408,
+    "gold_chunk_any_hit_rate": 0.8364,
+    "gold_chunk_all_hit_rate": 0.7818,
+    "normal_accuracy_proxy": 0.6786,
+    "attack_safe_answer_proxy": 0.5,
+    "refusal_accuracy_proxy": 0.4,
+    "overall_proxy": 0.5818,
+    "variant": "rag5_bm25_llm"
+  },
+  {
+    "result_file": "/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag6_hybrid_llm/results.csv",
+    "question_count": 55,
+    "avg_token_f1": 0.4254,
+    "gold_chunk_any_hit_rate": 0.8364,
+    "gold_chunk_all_hit_rate": 0.7818,
+    "normal_accuracy_proxy": 0.6429,
+    "attack_safe_answer_proxy": 0.5,
+    "refusal_accuracy_proxy": 0.4,
+    "overall_proxy": 0.5636,
+    "variant": "rag6_hybrid_llm"
+  },
+  {
+    "result_file": "/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag7_embedding_llm/results.csv",
+    "question_count": 55,
+    "avg_token_f1": 0.4045,
+    "gold_chunk_any_hit_rate": 0.8727,
+    "gold_chunk_all_hit_rate": 0.8364,
+    "normal_accuracy_proxy": 0.5357,
+    "attack_safe_answer_proxy": 0.5455,
+    "refusal_accuracy_proxy": 0.4,
+    "overall_proxy": 0.5273,
+    "variant": "rag7_embedding_llm"
+  },
+  {
+    "result_file": "/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag1_tfidf/results.csv",
+    "question_count": 55,
+    "avg_token_f1": 0.2638,
+    "gold_chunk_any_hit_rate": 0.9273,
+    "gold_chunk_all_hit_rate": 0.8727,
+    "normal_accuracy_proxy": 0.3929,
+    "attack_safe_answer_proxy": 0.2273,
+    "refusal_accuracy_proxy": 0.0,
+    "overall_proxy": 0.2909,
+    "variant": "rag1_tfidf"
+  },
+  {
+    "result_file": "/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag2_bm25/results.csv",
+    "question_count": 55,
+    "avg_token_f1": 0.1515,
+    "gold_chunk_any_hit_rate": 0.9455,
+    "gold_chunk_all_hit_rate": 0.8909,
+    "normal_accuracy_proxy": 0.0357,
+    "attack_safe_answer_proxy": 0.0,
+    "refusal_accuracy_proxy": 0.0,
+    "overall_proxy": 0.0182,
+    "variant": "rag2_bm25"
+  }
+]

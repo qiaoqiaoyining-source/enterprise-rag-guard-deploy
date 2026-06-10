@@ -103,12 +103,20 @@ def defended_variant_for_baseline(best_variant: str) -> str:
     return "defended_hybrid_llm"
 
 
-def defense_command(defended_variant: str, run_name: str, extra_flags: list[str], args: argparse.Namespace) -> list[str]:
+def defense_command(
+    defended_variant: str,
+    control_variant: str,
+    run_name: str,
+    extra_flags: list[str],
+    args: argparse.Namespace,
+) -> list[str]:
     cmd = [
         sys.executable,
         "defended_variants.py",
         "--variant",
         defended_variant,
+        "--control-recommendation",
+        control_variant,
         "--run-name",
         run_name,
         "--questions",
@@ -143,6 +151,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chat-model", default=os.getenv("CHAT_MODEL", "Qwen/Qwen2.5-72B-Instruct"))
     parser.add_argument("--embedding-model", default=os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"))
     parser.add_argument("--skip-defenses", action="store_true")
+    parser.add_argument(
+        "--reuse-baselines",
+        action="store_true",
+        help="Score existing baseline results instead of rerunning variants whose results.csv already exists.",
+    )
+    parser.add_argument(
+        "--skip-missing-baselines",
+        action="store_true",
+        help="When reusing baselines, skip variants without an existing results.csv.",
+    )
     return parser.parse_args()
 
 
@@ -152,8 +170,13 @@ def main() -> None:
 
     baseline_rows: list[dict[str, object]] = []
     for variant in BASELINE_VARIANTS:
-        run_command(baseline_command(variant, args))
-        metrics = evaluate(BASELINE_OUT / variant / "results.csv")
+        result_path = BASELINE_OUT / variant / "results.csv"
+        if not (args.reuse_baselines and result_path.exists()):
+            if args.reuse_baselines and args.skip_missing_baselines:
+                print(f"Skipping missing baseline result: {result_path}")
+                continue
+            run_command(baseline_command(variant, args))
+        metrics = evaluate(result_path)
         metrics["variant"] = variant
         baseline_rows.append(metrics)
 
@@ -177,7 +200,15 @@ def main() -> None:
     defense_rows: list[dict[str, object]] = []
     for run_name, extra_flags in DEFENSE_RUNS:
         effective_run_name = f"{best_defended_variant}__{run_name}"
-        run_command(defense_command(best_defended_variant, effective_run_name, extra_flags, args))
+        run_command(
+            defense_command(
+                best_defended_variant,
+                best_variant,
+                effective_run_name,
+                extra_flags,
+                args,
+            )
+        )
         metrics = evaluate(DEFENSE_OUT / effective_run_name / "results.csv")
         metrics["variant"] = best_defended_variant
         metrics["run_name"] = effective_run_name

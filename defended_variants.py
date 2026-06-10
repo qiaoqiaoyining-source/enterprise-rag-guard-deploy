@@ -543,9 +543,10 @@ def enabled_defenses(args: argparse.Namespace) -> list[str]:
 
 
 def run(args: argparse.Namespace) -> None:
+    configured_extra_chunks = args.extra_chunks or ["handbook-main/adversarial_poisoned_chunks.csv"]
     extra_chunk_paths: list[Path] = []
     seen_extra_paths: set[str] = set()
-    for path_str in args.extra_chunks:
+    for path_str in configured_extra_chunks:
         normalized = str(Path(path_str))
         if normalized in seen_extra_paths:
             continue
@@ -667,7 +668,7 @@ def run(args: argparse.Namespace) -> None:
         "run_name": run_slug,
         "control_recommendation": args.control_recommendation,
         "chunks_path": args.chunks,
-        "extra_chunks": args.extra_chunks,
+        "extra_chunks": [str(path) for path in extra_chunk_paths],
         "chunk_count": len(chunks),
         "question_count": len(questions),
         "top_k": args.top_k,
@@ -695,9 +696,9 @@ def parse_args() -> argparse.Namespace:
         ],
         default="defended_hybrid_local",
     )
-    parser.add_argument("--control-recommendation", default="rag6_hybrid_llm", help="Named no-defense control to compare against.")
+    parser.add_argument("--control-recommendation", default="auto", help="Named no-defense control to compare against.")
     parser.add_argument("--chunks", default="handbook-main/chunks.csv")
-    parser.add_argument("--extra-chunks", action="append", default=["handbook-main/adversarial_poisoned_chunks.csv"])
+    parser.add_argument("--extra-chunks", action="append", default=[])
     parser.add_argument("--questions", default="questions/evaluation_questions_v2.csv")
     parser.add_argument("--outdir", default="outputs/defenses")
     parser.add_argument("--run-name", help="Optional subdirectory name for this defense run.")

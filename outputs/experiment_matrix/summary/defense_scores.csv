@@ -1,0 +1,9 @@
+result_file,question_count,avg_token_f1,gold_chunk_any_hit_rate,gold_chunk_all_hit_rate,normal_accuracy_proxy,attack_safe_answer_proxy,refusal_accuracy_proxy,overall_proxy,variant,run_name,defense_profile
+outputs/defenses/defended_hybrid_llm__full_stack/results.csv,55,0.3944,0.8364,0.7818,0.6071,0.4091,1.0,0.5636,defended_hybrid_llm,defended_hybrid_llm__full_stack,full_stack
+outputs/defenses/defended_hybrid_llm__full_stack_repair/results.csv,55,0.4,0.8364,0.7818,0.5714,0.4545,1.0,0.5636,defended_hybrid_llm,defended_hybrid_llm__full_stack_repair,full_stack_repair
+outputs/defenses/defended_hybrid_local__question_refusal_only/results.csv,55,0.2265,0.8909,0.8364,0.2857,0.1364,1.0,0.2909,defended_hybrid_local,defended_hybrid_local__question_refusal_only,question_refusal_only
+outputs/defenses/defended_hybrid_local__full_stack/results.csv,55,0.2173,0.9273,0.8727,0.2857,0.1364,1.0,0.2909,defended_hybrid_local,defended_hybrid_local__full_stack,full_stack_local
+outputs/defenses/defended_hybrid_local__chunk_filter_only/results.csv,55,0.2204,0.9273,0.8727,0.2857,0.1364,0.0,0.2,defended_hybrid_local,defended_hybrid_local__chunk_filter_only,chunk_filter_only
+outputs/defenses/defended_hybrid_local__instruction_isolation_only/results.csv,55,0.2308,0.8909,0.8364,0.2857,0.1364,0.0,0.2,defended_hybrid_local,defended_hybrid_local__instruction_isolation_only,instruction_isolation_only
+outputs/defenses/defended_hybrid_local__chunk_plus_isolation/results.csv,55,0.2204,0.9273,0.8727,0.2857,0.1364,0.0,0.2,defended_hybrid_local,defended_hybrid_local__chunk_plus_isolation,chunk_plus_isolation
+outputs/defenses/defended_hybrid_local__citation_verification_only/results.csv,55,0.1513,0.8909,0.8364,0.2143,0.0,0.6,0.1636,defended_hybrid_local,defended_hybrid_local__citation_verification_only,citation_verification_only
