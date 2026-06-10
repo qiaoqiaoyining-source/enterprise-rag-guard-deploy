@@ -1,0 +1,26 @@
+{
+  "variant": "defended_hybrid_local",
+  "run_name": "defended_hybrid_local__citation_verification_only",
+  "control_recommendation": "rag4_tfidf_llm",
+  "chunks_path": "handbook-main/chunks.csv",
+  "extra_chunks": [
+    "handbook-main/adversarial_poisoned_chunks.csv"
+  ],
+  "chunk_count": 156,
+  "question_count": 55,
+  "top_k": 6,
+  "overretrieve_factor": 3,
+  "max_context_chars": 5000,
+  "refusal_count": 20,
+  "validated_answer_count": 35,
+  "blocked_chunk_total": 0,
+  "active_defenses": [
+    "citation_verification"
+  ],
+  "outputs": [
+    "results.csv",
+    "retrievals.csv",
+    "prompts.jsonl",
+    "summary.json"
+  ]
+}

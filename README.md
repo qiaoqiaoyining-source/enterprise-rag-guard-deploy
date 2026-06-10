@@ -282,6 +282,15 @@ This script:
 4. runs defense ablations and full-stack defense
 5. writes summaries to `outputs/experiment_matrix/summary/`
 
+If baseline results already exist, reuse them without spending API credit again:
+
+```bash
+python3 run_experiment_matrix.py \
+  --reuse-baselines \
+  --skip-missing-baselines \
+  --skip-defenses
+```
+
 Detailed design notes are in:
 
 ```text
