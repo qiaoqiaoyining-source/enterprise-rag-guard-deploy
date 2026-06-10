@@ -1,0 +1,20 @@
+{
+  "variant": "rag1_tfidf",
+  "chunks_path": "handbook-main/chunks.csv",
+  "extra_chunks": [
+    "/Users/sunyuting/Documents/Codex/2026-06-08/prompt-injection-rag-handbook-main 2/handbook-main/adversarial_poisoned_chunks.csv"
+  ],
+  "chunk_count": 156,
+  "poisoned_chunk_count": 10,
+  "question_count": 55,
+  "top_k": 8,
+  "max_context_chars": 6000,
+  "outputs": [
+    "results.csv",
+    "retrievals.csv",
+    "prompts.jsonl",
+    "summary.json"
+  ],
+  "llm_model": "",
+  "note": "No prompt-injection defense is applied in any variant."
+}
