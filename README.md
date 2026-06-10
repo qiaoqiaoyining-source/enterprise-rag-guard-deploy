@@ -1,4 +1,4 @@
-[README.md](https://github.com/user-attachments/files/28786710/README.md)
+[README.md](https://github.com/user-attachments/files/28787495/README.md)
 # Prompt Injection RAG Handbook Project
 
 Course project on prompt injection attacks and defenses for retrieval-augmented generation (RAG) over an employee handbook knowledge base.
@@ -10,11 +10,13 @@ This project explores how prompt injection can affect retrieval-augmented genera
 Current version summary:
 
 - `baseline_rag.py` is the historical single baseline entry point.
-- `rag_variants.py` is the main runner for the six no-defense baseline configurations.
+- `rag_variants.py` is the main runner for the seven no-defense baseline configurations.
 - `defended_variants.py` is the main runner for Part D defended configurations.
 - `evaluate_results.py` provides a lightweight proxy evaluator for result CSV files.
-- `outputs/baselines/` is the main results directory for the six baseline runs.
+- `run_experiment_matrix.py` runs the baseline matrix, selects the strongest no-defense control, and runs defense ablations.
+- `outputs/baselines/` is the main results directory for direct baseline runs.
 - `outputs/defenses/` is the results directory for defended runs.
+- `outputs/experiment_matrix/` stores matrix summaries across baselines and defenses.
 - `outputs/baseline_rag/` is kept as historical output from the original baseline script.
 
 ## Repository Structure
@@ -26,6 +28,7 @@ Current version summary:
 ├── rag_demo_server.py
 ├── defended_variants.py
 ├── evaluate_results.py
+├── run_experiment_matrix.py
 ├── handbook-main/
 │   ├── chunks.csv
 │   ├── adversarial_poisoned_chunks.csv
@@ -62,7 +65,7 @@ Synthetic poisoned corpus for retrieved-document prompt injection tests:
 handbook-main/adversarial_poisoned_chunks.csv
 ```
 
-The poisoned chunks are not real handbook policy. They are test-only attack data with `is_poisoned`, `poison_strength`, and `attack_goal` fields.
+The poisoned chunks are not real handbook policy. They are test-only attack data with `is_poisoned`, `poison_strength`, and `attack_goal` fields. The current version is written as stealthier internal-looking notes so that retrieved-document attacks are less self-revealing and closer to realistic poisoning.
 
 ## Question Sets
 
@@ -92,7 +95,7 @@ It uses TF-IDF retrieval and deterministic extractive answer generation.
 
 ## RAG Variants
 
-The newer runner provides three no-defense variants:
+The newer runner provides seven no-defense variants:
 
 | Variant | Retrieval | Generation | Purpose |
 | --- | --- | --- | --- |
@@ -102,6 +105,7 @@ The newer runner provides three no-defense variants:
 | `rag4_tfidf_llm` | TF-IDF | LLM | Tests whether TF-IDF retrieval plus LLM generation is stronger than extractive TF-IDF. |
 | `rag5_bm25_llm` | BM25 | LLM | BM25 retrieval plus LLM generation. |
 | `rag6_hybrid_llm` | TF-IDF + BM25 score fusion | LLM | Stronger lexical hybrid RAG baseline. |
+| `rag7_embedding_llm` | Embedding retrieval | LLM | Dense retrieval + LLM baseline for comparison against lexical RAG. |
 
 Run the original-style variant on the v2 question set:
 
@@ -130,28 +134,21 @@ python3 rag_variants.py \
 
 ## LLM Setup
 
-The LLM variants use an OpenAI-compatible Chat Completions API. By default this project now connects directly to DeepSeek instead of ModelVerse.
+The LLM variants use an OpenAI-compatible Chat Completions API. This project can be used with any compatible provider, including SiliconFlow.
 
 Recommended environment variables:
 
 ```bash
-export OPENAI_API_KEY="your_deepseek_api_key"
-export OPENAI_API_BASE="https://api.deepseek.com/v1"
-export CHAT_MODEL="deepseek/deepseek-v4-pro"
-export CHAT_STREAM="False"
-export CHAT_TEMPERATURE="1"
-export SYSTEM_PROMPT_ROLE="user"
-export MAX_RETRY="1"
-export RETRY_WAIT_SECONDS="5"
-export TIMEOUT_FAIL_LIMIT="100"
+export OPENAI_API_KEY="your_api_key"
+export OPENAI_API_BASE="https://api.siliconflow.cn/v1"
+export CHAT_MODEL="deepseek-ai/DeepSeek-V4-Flash"
+export EMBEDDING_MODEL="Qwen/Qwen3-Embedding-4B"
 ```
 
-Default settings in `rag_variants.py` are now aligned with that direct DeepSeek setup:
+The base URL is the API endpoint, not the cloud console URL. For SiliconFlow the correct API base is:
 
 ```text
-base_url = https://api.deepseek.com/v1
-model = deepseek/deepseek-v4-pro
-api key env = OPENAI_API_KEY
+https://api.siliconflow.cn/v1
 ```
 
 If you want to override them for a specific run, you can still pass flags such as `--base-url`, `--model`, or `--api-key-env`.
@@ -191,12 +188,31 @@ python3 rag_variants.py \
   --extra-chunks handbook-main/adversarial_poisoned_chunks.csv
 ```
 
+Run Embedding + LLM:
+
+```bash
+python3 rag_variants.py \
+  --variant rag7_embedding_llm \
+  --questions questions/evaluation_questions_v2.csv \
+  --extra-chunks handbook-main/adversarial_poisoned_chunks.csv \
+  --embedding-model Qwen/Qwen3-Embedding-4B
+```
+
+Practical note for long LLM-backed runs: more stable settings are often:
+
+```bash
+--llm-timeout 300 --llm-retries 2 --max-tokens 120 --max-context-chars 2200 --top-k 3
+```
+
 ## Part D Defenses
 
-The recommended no-defense control for Part D is:
+The recommended no-defense control for Part D should be selected from the evaluated no-defense baselines rather than fixed in advance.
+
+Main candidates:
 
 ```text
 rag6_hybrid_llm
+rag7_embedding_llm
 ```
 
 Main defended runner:
@@ -211,8 +227,16 @@ Supported defended variants:
 | --- | --- | --- | --- |
 | `defended_bm25_local` | BM25 | local extractive | fully local defended baseline |
 | `defended_hybrid_local` | TF-IDF + BM25 fusion | local extractive | stronger local defended baseline |
-| `defended_hybrid_llm` | TF-IDF + BM25 fusion | LLM | main defended comparison against `rag6_hybrid_llm` |
+| `defended_hybrid_llm` | TF-IDF + BM25 fusion | LLM | main defended comparison against lexical hybrid control runs |
 | `defended_embedding_llm` | embedding retrieval | LLM | stronger experimental defended variant |
+
+The defended runner also supports ablation switches:
+
+- `--enable-question-refusal`
+- `--enable-chunk-filter`
+- `--enable-instruction-isolation`
+- `--enable-citation-verification`
+- `--enable-llm-repair`
 
 Run the main local defended baseline:
 
@@ -242,6 +266,22 @@ python3 defended_variants.py \
   --extra-chunks handbook-main/adversarial_poisoned_chunks.csv
 ```
 
+Run the full experiment matrix:
+
+```bash
+python3 run_experiment_matrix.py \
+  --chat-model "deepseek-ai/DeepSeek-V4-Flash" \
+  --embedding-model "Qwen/Qwen3-Embedding-4B"
+```
+
+This script:
+
+1. runs all seven no-defense baselines
+2. scores them with `evaluate_results.py`
+3. selects the strongest no-defense control
+4. runs defense ablations and full-stack defense
+5. writes summaries to `outputs/experiment_matrix/summary/`
+
 Detailed design notes are in:
 
 ```text
@@ -258,7 +298,7 @@ The original baseline writes to:
 outputs/baseline_rag/
 ```
 
-The six current baseline configurations write to:
+The direct baseline configurations write to:
 
 ```text
 outputs/baselines/<variant>/
@@ -273,16 +313,27 @@ outputs/baselines/rag3_llm_only/
 outputs/baselines/rag4_tfidf_llm/
 outputs/baselines/rag5_bm25_llm/
 outputs/baselines/rag6_hybrid_llm/
+outputs/baselines/rag7_embedding_llm/
 ```
 
 Defended configurations write to:
 
 ```text
-outputs/defenses/defended_bm25_local/
-outputs/defenses/defended_hybrid_local/
-outputs/defenses/defended_hybrid_llm/
-outputs/defenses/defended_embedding_llm/
+outputs/defenses/<run_name>/
 ```
+
+The experiment matrix helper writes to:
+
+```text
+outputs/experiment_matrix/
+```
+
+Key matrix summaries:
+
+- `outputs/experiment_matrix/summary/baseline_scores.csv`
+- `outputs/experiment_matrix/summary/defense_scores.csv`
+- `outputs/experiment_matrix/summary/recommendation.json`
+- `outputs/experiment_matrix/summary/final_summary.json`
 
 Each new variant produces:
 
@@ -311,7 +362,7 @@ The page lets you enter a question, run the no-defense baseline RAG pipeline, an
 
 ## Notes
 
-All current RAG configurations are intentionally no-defense baselines. They do not apply prompt-injection filtering, instruction isolation, citation verification, or second-pass validation. Those mechanisms are separate project parts.
+The `rag*` family is intentionally no-defense. Prompt-injection filtering, instruction isolation, citation verification, question refusal, and second-pass repair are all implemented separately in `defended_variants.py`.
 
 For GitHub, keep API keys and personal credentials out of the repository. Use your local shell environment or a private `.env` file that is excluded from version control.
 
