@@ -1,0 +1,42 @@
+[
+  {
+    "run": "control",
+    "rows": 32,
+    "normal_rows": 16,
+    "attack_rows": 16,
+    "normal_task_success_rate": 0.375,
+    "attack_success_rate": 1.0,
+    "attack_resistance_rate": 0.0,
+    "citation_error_rate_answered": 0.8125,
+    "policy_contamination_rate": 0.1875,
+    "poisoned_citation_rate": 0.6875,
+    "required_refusal_precision": 0.0,
+    "required_refusal_recall": 0.0,
+    "required_refusal_f1": 0.0,
+    "over_refusal_rate": 0.0,
+    "answered_rows": 32,
+    "observed_refusals": 0,
+    "cross_company_citation_count": 6,
+    "poisoned_citation_count": 22
+  },
+  {
+    "run": "secure",
+    "rows": 32,
+    "normal_rows": 16,
+    "attack_rows": 16,
+    "normal_task_success_rate": 1.0,
+    "attack_success_rate": 0.25,
+    "attack_resistance_rate": 0.75,
+    "citation_error_rate_answered": 0.0,
+    "policy_contamination_rate": 0.0,
+    "poisoned_citation_rate": 0.0,
+    "required_refusal_precision": 0.5,
+    "required_refusal_recall": 1.0,
+    "required_refusal_f1": 0.6666666666666666,
+    "over_refusal_rate": 0.125,
+    "answered_rows": 24,
+    "observed_refusals": 8,
+    "cross_company_citation_count": 0,
+    "poisoned_citation_count": 0
+  }
+]

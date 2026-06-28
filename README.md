@@ -3,6 +3,43 @@
 
 Course project on prompt injection attacks and defenses for retrieval-augmented generation (RAG) over an employee handbook knowledge base.
 
+## Cross-Company Upgrade
+
+The project now includes an upgraded track:
+
+```text
+Prompt-Injection Defense and Transfer Evaluation for Cross-Company Knowledge Agents
+```
+
+Instead of evaluating only one employee-handbook RAG system, the upgraded track
+builds a task-oriented enterprise knowledge agent and tests whether its safety
+gateway transfers across company knowledge bases. It compares an ordinary
+enterprise agent against a secure agent under user-query injection,
+retrieved-document poisoning, and cross-company policy contamination attacks.
+
+Run the full local upgraded experiment:
+
+```bash
+python3 run_cross_company_experiment.py
+```
+
+This writes:
+
+```text
+data/multi_company/company_chunks.csv
+data/multi_company/cross_company_questions.csv
+data/multi_company/cross_company_poisoned_chunks.csv
+outputs/cross_company_agent/control/results.csv
+outputs/cross_company_agent/secure/results.csv
+outputs/cross_company_agent/evaluation/summary_metrics.csv
+```
+
+Detailed upgrade notes are in:
+
+```text
+docs/cross_company_agent_upgrade.md
+```
+
 ## Project Scope
 
 This project explores how prompt injection can affect retrieval-augmented generation systems that answer questions over an employee handbook. It includes clean handbook chunks, synthetic poisoned chunks for attack testing, a family of no-defense baselines, labelled question sets for smoke tests and evaluation, and both lexical and LLM-backed variants.
@@ -15,9 +52,15 @@ Current version summary:
 - `evaluate_results.py` provides a lightweight proxy evaluator for result CSV files.
 - `evaluate_part_e.py` produces final safety/utility metrics, attack breakdowns, and charts.
 - `run_experiment_matrix.py` runs the baseline matrix, selects the strongest no-defense control, and runs defense ablations.
+- `build_multi_company_corpus.py` builds the cross-company corpus from Made Tech plus public company-handbook sources.
+- `generate_cross_company_attacks.py` generates task-oriented attacks, including cross-company policy contamination.
+- `enterprise_agent.py` runs the ordinary control agent and the secure enterprise knowledge agent.
+- `evaluate_cross_company.py` evaluates transfer, citation safety, contamination, and refusal behavior.
+- `run_cross_company_experiment.py` runs the full upgraded local experiment.
 - `outputs/baselines/` is the main results directory for direct baseline runs.
 - `outputs/defenses/` is the results directory for defended runs.
 - `outputs/experiment_matrix/` stores matrix summaries across baselines and defenses.
+- `outputs/cross_company_agent/` stores upgraded cross-company agent outputs.
 - `outputs/baseline_rag/` is kept as historical output from the original baseline script.
 
 ## Repository Structure
@@ -29,6 +72,11 @@ Current version summary:
 ├── rag_demo_server.py
 ├── defended_variants.py
 ├── evaluate_results.py
+├── evaluate_cross_company.py
+├── build_multi_company_corpus.py
+├── generate_cross_company_attacks.py
+├── enterprise_agent.py
+├── run_cross_company_experiment.py
 ├── run_experiment_matrix.py
 ├── handbook-main/
 │   ├── chunks.csv
@@ -45,10 +93,12 @@ Current version summary:
 │   └── README.md
 ├── outputs/
 │   ├── baseline_rag/          # historical output from baseline_rag.py
-│   └── baselines/             # current output root for the six baseline configurations
+│   ├── baselines/             # current output root for baseline configurations
+│   └── cross_company_agent/   # upgraded enterprise-agent transfer outputs
 └── docs/
     ├── c_part_baseline.md
     ├── d_part_defense.md
+    ├── cross_company_agent_upgrade.md
     ├── final_project_report.md
     └── rag_variants_and_attack_data.md
 ```
