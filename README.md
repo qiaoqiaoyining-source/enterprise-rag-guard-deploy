@@ -1,13 +1,20 @@
 # EnterpriseRAG-Guard
 
 EnterpriseRAG-Guard is a course project on prompt-injection defense for
-company-specific RAG knowledge agents. The final version treats each company as
-having its own agent and knowledge boundary, then evaluates whether one shared
-security layer transfers across different companies, languages, and attack
-surfaces.
+company-specific RAG knowledge agents. The final version treats each enterprise
+as an isolated tenant with its own knowledge boundary, then evaluates whether one
+shared security layer transfers across different companies, languages, and
+attack surfaces.
 
 ```text
 Company Agent = Universal Security Core + Company Security Profile + Company Knowledge Base
+```
+
+For product deployment, the formula extends to:
+
+```text
+EnterpriseRAG-Guard Platform =
+Connector Layer + Tenant Isolation + Universal Guard + Company Adapter + Evaluation + Monitoring
 ```
 
 ## What This Project Demonstrates
@@ -18,6 +25,8 @@ Company Agent = Universal Security Core + Company Security Profile + Company Kno
 - Chinese company coverage with 200 chunks each for Tencent, BYD, and Huawei.
 - A bilingual security console where an employee can ask normal questions, or a
   red-team user can try prompt-injection attacks and watch the defense trace.
+- A product-style onboarding path where a new enterprise can connect its own
+  documents, run secure ingestion, and generate a tenant security profile.
 - A B0-B7 ablation experiment showing how provenance checks, quarantine,
   instruction/evidence isolation, extraction, verification, and repair/refusal
   change attack success.
@@ -58,6 +67,42 @@ Corpus origin:
 Synthetic poisoned documents are not counted as clean company corpus. They are
 created only for evaluation and interactive red-team demonstrations.
 
+## Product Architecture
+
+The project is no longer only a preloaded seven-company prototype. It now models
+how a customer would buy and deploy the system:
+
+```text
+Enterprise data sources
+  -> Connector layer
+  -> Secure ingestion
+  -> Tenant knowledge store
+  -> EnterpriseRAG-Guard data plane
+  -> Employee knowledge assistant
+```
+
+Supported product modules:
+
+- **Connect**: normalize uploaded files, websites, SharePoint/Confluence-style
+  sources, internal APIs, databases, and existing vector stores behind one
+  connector contract.
+- **Protect**: query scanning, chunk scanning, secure reranking, evidence
+  isolation, citation verification, and repair/refusal.
+- **Evaluate**: red-team prompt-injection tests and security regression checks.
+- **Observe**: risk logs, quarantined documents, high-risk sources, suspicious
+  users, and policy-version changes.
+
+`enterprise_onboarding.py` contains the productized onboarding primitives:
+
+- `KnowledgeConnector`
+- `DocumentRecord`
+- `TenantProfile`
+- `SecureIngestionPipeline`
+- `IngestionReport`
+
+The demo implements a lightweight `/api/onboard` endpoint so a new company can be
+created from the website, scanned, and assigned a recommended tenant profile.
+
 ## Defense Design
 
 EnterpriseRAG-Guard combines:
@@ -65,8 +110,8 @@ EnterpriseRAG-Guard combines:
 1. Provenance-aware retrieval using company, source domain, trust level, content
    hash, document version, and instruction-risk metadata.
 2. Query and document risk detection for English and Chinese attacks.
-3. Company security profiles for allowed domains, sensitive fields, citation
-   rules, and risk thresholds.
+3. Tenant/company security profiles for allowed sources, sensitive fields,
+   citation rules, deployment mode, isolation level, and risk thresholds.
 4. Instruction/evidence isolation, treating retrieved documents as untrusted
    evidence rather than executable instructions.
 5. Extractor-generator isolation, where raw documents are converted into
@@ -147,27 +192,26 @@ that prompt injection is solved.
 
 ## Security Console Features
 
-The website supports:
+The website is designed as a customer-facing enterprise knowledge assistant, not
+as a raw experiment dashboard. It supports:
 
-- English/Chinese language selection.
-- Company selection across all seven company agents.
-- Free-form employee questions.
-- Built-in red-team templates: direct injection, credential theft,
-  cross-company contamination, adaptive policy amendment, and poisoned document.
-- "Inject Your Own Chunk" to paste a fake policy note and see whether it is used
-  or quarantined.
-- Risk-threshold slider to demonstrate stricter or looser defense behavior.
-- Side-by-side B0 control agent vs B7 secure agent answers.
-- Defense trace, safe evidence panel, quarantine panel, B0-B7 ablation table,
-  and transfer matrix.
+- a Chinese-first employee knowledge search experience;
+- English switching for foreign-company questions;
+- customer-facing product introduction;
+- employee query mode;
+- red-team challenge mode with B0 control vs B7 secure answers;
+- defense trace, safe evidence, and quarantine panels;
+- a "Create Your Company Agent" onboarding wizard;
+- secure ingestion report and generated tenant profile.
 
 ## Key Files
 
 ```text
 build_enterprise_corpus.py                 # builds the final real-company corpus
 enterprise_rag_guard.py                    # guard core and defense pipeline
+enterprise_onboarding.py                   # tenant onboarding and secure ingestion
 run_guard_transfer_experiment.py           # B0-B7 transfer/ablation runner
-guard_demo_server.py                       # bilingual visual security console
+guard_demo_server.py                       # product-style web demo and APIs
 data/company_profiles.json                 # company security profiles
 data/enterprise_corpus/company_chunks.csv  # final clean corpus
 docs/enterprise_rag_guard.md               # detailed technical explanation

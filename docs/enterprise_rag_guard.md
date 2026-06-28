@@ -4,7 +4,7 @@
 
 EnterpriseRAG-Guard is the final version of the project. It is not presented as
 an original handbook RAG plus a separate enterprise experiment. The final system
-is a company-specific RAG security framework:
+is a company-specific, tenant-isolated RAG security framework:
 
 ```text
 Company Agent = Universal Security Core + Company Security Profile + Company Knowledge Base
@@ -12,6 +12,17 @@ Company Agent = Universal Security Core + Company Security Profile + Company Kno
 
 Each company has its own knowledge boundary. The reusable contribution is the
 guard layer that transfers across companies and languages.
+
+The productized platform adds:
+
+```text
+EnterpriseRAG-Guard Platform =
+Connector Layer + Tenant Isolation + Universal Guard + Company Adapter + Evaluation + Monitoring
+```
+
+The seven bundled companies are the benchmark and demo tenants. A real customer
+would create a new tenant, connect their own data sources, run secure ingestion,
+review quarantined documents, and launch a dedicated company agent.
 
 ## Corpus Design
 
@@ -53,9 +64,32 @@ Every chunk carries metadata used by the guard:
 
 ## Defense Architecture
 
+The defense is split into two classes so the project is not just a company-ID
+filter.
+
+Deterministic boundary controls:
+
+- tenant/company ID;
+- allowed source domains or enterprise systems;
+- source host;
+- content hash;
+- document version;
+- cross-company citation restrictions;
+- citation ID existence.
+
+Semantic and model-facing controls:
+
+- query risk detection;
+- chunk instruction-risk scoring;
+- instruction/evidence isolation;
+- extractor-generator isolation;
+- policy claim verification;
+- repair/refusal.
+
 ### 1. Company Security Profile
 
-`data/company_profiles.json` defines a small security profile for each company:
+`data/company_profiles.json` defines a security profile for each benchmark
+company:
 
 - allowed source domains;
 - sensitive fields, such as credentials, private employee data, and API keys;
@@ -67,6 +101,10 @@ Every chunk carries metadata used by the guard:
 
 This gives the system transferability: the core guard is shared, while company
 policy boundaries can be adapted without rewriting the whole RAG pipeline.
+
+For product deployment, `enterprise_onboarding.py` extends this idea to a
+`TenantProfile` with deployment mode, isolation level, connected sources,
+sensitive fields, risk thresholds, retention period, and citation policy.
 
 ### 2. Bilingual Risk Detection
 
@@ -136,6 +174,46 @@ After generation, the verifier checks:
 
 The full B7 guard repairs once if possible. If it cannot produce a grounded
 answer, it refuses.
+
+## Enterprise Onboarding And External Data
+
+The project now includes a productized onboarding layer. A customer does not need
+to send documents to developers for manual cleaning. The intended flow is:
+
+```text
+Create tenant
+  -> Connect data sources
+  -> Validate file/source type
+  -> Extract text
+  -> Scan for embedded instructions and sensitive data
+  -> Verify source and version
+  -> Human approval or quarantine
+  -> Chunk and index into a tenant-isolated store
+  -> Launch company-specific agent
+```
+
+Implemented primitives:
+
+| Component | Purpose |
+| --- | --- |
+| `KnowledgeConnector` | Common connector contract for files, Wiki, APIs, or existing vector stores. |
+| `DocumentRecord` | Normalized document schema with tenant, source, ACL, version, hash, and label. |
+| `TenantProfile` | Product-level tenant configuration and security policy. |
+| `SecureIngestionPipeline` | Pre-indexing scan for injection text, secrets, duplicates, and unverified sources. |
+| `IngestionReport` | Admin-facing scan result with accepted, quarantined, and review-required documents. |
+
+This supports two product modes:
+
+1. Full system: EnterpriseRAG-Guard provides connectors, ingestion, retrieval,
+   answer generation, security checks, and the employee portal.
+2. Security gateway: an enterprise keeps its existing RAG, while
+   EnterpriseRAG-Guard provides query scanning, chunk scanning, secure reranking,
+   answer verification, and red-team evaluation APIs.
+
+For multi-tenant use, the recommended default is index-per-tenant isolation. A
+future production deployment could offer shared infrastructure for trials,
+dedicated vector stores for standard enterprise customers, and private
+VPC/on-premise deployment for regulated customers.
 
 ## B0-B7 Ablation
 
@@ -217,23 +295,24 @@ Open:
 http://127.0.0.1:8765
 ```
 
-The app is no longer just a blank chatbot. It includes:
+The app is now designed as a Chinese-first product website rather than a raw
+experiment dashboard. It includes:
 
-- language selector for English and Chinese;
-- company selector for all seven company agents;
-- free-form question input;
-- red-team templates for common attack types;
-- "Inject Your Own Chunk" to paste a fake policy and test quarantine;
-- risk threshold slider;
+- a customer-facing home page;
+- employee knowledge-search mode;
+- English switching for foreign-company questions;
+- red-team challenge mode;
 - B0 control vs B7 secure answer comparison;
 - defense trace;
 - safe evidence and quarantine panels;
-- ablation table;
-- company transfer matrix.
+- "Create Your Company Agent" onboarding wizard;
+- secure ingestion report;
+- generated tenant profile preview;
+- platform workflow section covering Connect, Ingest, Protect, Evaluate, and
+  Observe.
 
-`127.0.0.1` means local-only. The server binds to `0.0.0.0` and prints a LAN URL
-for classmates on the same network. Public internet access requires deployment
-or a tunnel.
+Local development still runs through `guard_demo_server.py`, but the page no
+longer displays localhost/LAN implementation details to end users.
 
 ## How To Present The Project
 
@@ -248,8 +327,8 @@ The strongest framing is:
    companies.
 5. Evaluation contribution: B0-B7 ablation, by-company transfer matrix, and
    by-attack-surface analysis.
-6. Demo contribution: interactive employee/red-team console showing both answers
-   and the internal defense trace.
+6. Product contribution: a customer-facing employee assistant, red-team
+   challenge mode, and tenant onboarding flow.
 
 ## Limitations
 
