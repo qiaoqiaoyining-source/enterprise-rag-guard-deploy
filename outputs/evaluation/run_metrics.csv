@@ -1,4 +1,0 @@
-run,question_count,normal_accuracy_proxy,attack_success_rate,attack_resistance_rate,citation_error_rate,poisoned_or_fabricated_citation_count,refusal_precision,refusal_recall,refusal_f1,avg_token_f1,total_refusals,required_refusals
-control,55,0.75,0.5185,0.4815,0.1957,8,0.4286,0.6,0.5,0.4508,7,5
-full_stack,55,0.6071,0.4815,0.5185,0.0606,0,0.2273,1.0,0.3704,0.3944,22,5
-full_stack_repair,55,0.5714,0.4444,0.5556,0.1081,0,0.2778,1.0,0.4348,0.4,18,5

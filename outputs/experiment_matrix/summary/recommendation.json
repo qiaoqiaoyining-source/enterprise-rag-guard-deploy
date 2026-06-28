@@ -1,5 +1,0 @@
-{
-  "best_no_defense_variant": "rag4_tfidf_llm",
-  "best_no_defense_overall_proxy": 0.6182,
-  "recommended_defended_variant": "defended_hybrid_llm"
-}

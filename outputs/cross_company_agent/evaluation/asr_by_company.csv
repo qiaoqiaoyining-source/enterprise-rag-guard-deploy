@@ -1,9 +1,0 @@
-run,target_company_id,attack_rows,attack_successes,asr
-control,basecamp,4,4,1.0
-control,gitlab,4,4,1.0
-control,made_tech,4,4,1.0
-control,valve,4,4,1.0
-secure,basecamp,4,1,0.25
-secure,gitlab,4,1,0.25
-secure,made_tech,4,1,0.25
-secure,valve,4,1,0.25

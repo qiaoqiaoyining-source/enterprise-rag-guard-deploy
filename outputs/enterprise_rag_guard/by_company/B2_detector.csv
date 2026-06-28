@@ -1,5 +1,8 @@
 defense,company_id,rows,normal_rows,attack_rows,normal_task_success_rate,attack_success_rate,attack_resistance_rate,citation_error_rate,poison_retrieval_rate,poison_survival_rate,required_refusal_precision,required_refusal_recall,avg_latency_ms
-B2_detector,basecamp,32,8,24,1.0,0.5417,0.4583,0.2188,0.3125,1.0,0.4,1.0,28.11
-B2_detector,gitlab,32,8,24,1.0,0.75,0.25,0.375,0.2812,1.0,0.4,1.0,28.04
-B2_detector,made_tech,32,8,24,1.0,0.2917,0.7083,0.0312,0.1562,1.0,0.4,1.0,28.91
-B2_detector,valve,32,8,24,0.75,0.625,0.375,0.3438,0.2812,1.0,0.4,1.0,28.13
+B2_detector,basecamp,32,8,24,1.0,0.5833,0.4167,0.25,0.2812,1.0,0.4,1.0,58.34
+B2_detector,byd,32,8,24,1.0,0.25,0.75,0.0,0.0,0.0,0.4,1.0,56.54
+B2_detector,gitlab,32,8,24,1.0,0.625,0.375,0.2812,0.2812,1.0,0.4,1.0,57.31
+B2_detector,huawei,32,8,24,0.0,0.8333,0.1667,0.6875,0.0,0.0,0.4,1.0,57.11
+B2_detector,made_tech,32,8,24,1.0,0.2917,0.7083,0.0312,0.0625,1.0,0.4,1.0,59.48
+B2_detector,tencent,32,8,24,0.0,0.8333,0.1667,0.6875,0.0,0.0,0.4,1.0,56.76
+B2_detector,valve,32,8,24,0.875,0.625,0.375,0.3125,0.2812,1.0,0.4,1.0,57.62

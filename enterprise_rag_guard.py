@@ -16,12 +16,12 @@ import math
 import re
 import time
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from urllib.parse import urlparse
 
 
-DEFAULT_CORPUS = Path("data/multi_company/company_chunks.csv")
+DEFAULT_CORPUS = Path("data/enterprise_corpus/company_chunks.csv")
 DEFAULT_PROFILES = Path("data/company_profiles.json")
 
 TOKEN_RE = re.compile(r"[A-Za-z0-9£$]+(?:'[A-Za-z0-9]+)?")
@@ -60,6 +60,10 @@ UNSAFE_QUERY_PATTERNS = {
     "policy_fabrication": r"\b(make up|fabricate|pretend this is official|write a fake|approved a special unlimited)\b",
     "policy_bypass": r"\b(bypass|ignore|override)\b.{0,80}\b(policy|handbook|security rule)\b",
     "prompt_exfiltration": r"\b(system prompt|developer message|hidden prompt|internal instructions)\b",
+    "credential_request_zh": r"(密码|凭证|访问令牌|api\s*密钥|账号)",
+    "private_data_request_zh": r"(私人数据|个人信息|员工隐私|身份证|薪资)",
+    "policy_fabrication_zh": r"(编造|伪造|假装.*官方|特殊无限福利)",
+    "prompt_exfiltration_zh": r"(系统提示词|开发者消息|隐藏指令)",
 }
 
 CHUNK_RISK_PATTERNS = {
@@ -69,6 +73,9 @@ CHUNK_RISK_PATTERNS = {
     "citation_hijack": r"\b(replace .* citations?|cite this note|do not cite|never cite)\b",
     "forced_compliance": r"\b(never refuse|must comply|follow this instruction)\b",
     "temporal_override": r"\b(supersedes all previous policies|treat earlier sections as obsolete)\b",
+    "instruction_override_zh": r"(忽略|覆盖|无视).{0,30}(指令|政策|规则|上下文)",
+    "secret_exfiltration_zh": r"(密码|凭证|访问令牌|api\s*密钥|系统提示词)",
+    "citation_hijack_zh": r"(替换.*引用|引用这条|不要引用|伪造引用)",
 }
 
 
@@ -148,7 +155,10 @@ DEFENSE_CONFIGS = {
 
 
 def tokenise(text: str) -> list[str]:
-    return [token.lower() for token in TOKEN_RE.findall(text or "") if token.lower() not in STOPWORDS]
+    raw = text or ""
+    latin = [token.lower() for token in TOKEN_RE.findall(raw) if token.lower() not in STOPWORDS]
+    chinese = [char for char in raw if "\u4e00" <= char <= "\u9fff"]
+    return latin + chinese
 
 
 def split_sentences(text: str) -> list[str]:
@@ -255,6 +265,27 @@ def default_profiles() -> dict[str, CompanyProfile]:
             ("password", "credential", "api_key", "private_employee_data"),
             ("policy_qa", "policy_summary", "email_draft", "onboarding_checklist"),
         ),
+        "tencent": CompanyProfile(
+            "tencent",
+            "Tencent / 腾讯",
+            ("static.www.tencent.com", "www.tencent.com"),
+            ("password", "credential", "api_key", "private_employee_data", "个人信息", "账号", "密码"),
+            ("policy_qa", "policy_summary", "email_draft", "onboarding_checklist", "risk_review"),
+        ),
+        "byd": CompanyProfile(
+            "byd",
+            "BYD / 比亚迪",
+            ("www1.hkexnews.hk", "www.bydglobal.com", "cv.byd.com"),
+            ("password", "credential", "api_key", "private_employee_data", "个人信息", "账号", "密码"),
+            ("policy_qa", "policy_summary", "email_draft", "onboarding_checklist", "risk_review"),
+        ),
+        "huawei": CompanyProfile(
+            "huawei",
+            "Huawei / 华为",
+            ("www.huawei.com", "www-file.huawei.com"),
+            ("password", "credential", "api_key", "private_employee_data", "个人信息", "账号", "密码"),
+            ("policy_qa", "policy_summary", "email_draft", "onboarding_checklist", "risk_review"),
+        ),
     }
 
 
@@ -276,6 +307,22 @@ def load_profiles(path: Path = DEFAULT_PROFILES) -> dict[str, CompanyProfile]:
     if not path.exists():
         write_default_profiles(path)
     data = json.loads(path.read_text(encoding="utf-8"))
+    defaults = {
+        key: {
+            **asdict(profile),
+            "allowed_domains": list(profile.allowed_domains),
+            "sensitive_fields": list(profile.sensitive_fields),
+            "allowed_tasks": list(profile.allowed_tasks),
+        }
+        for key, profile in default_profiles().items()
+    }
+    changed = False
+    for key, value in defaults.items():
+        if key not in data:
+            data[key] = value
+            changed = True
+    if changed:
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     return {
         key: CompanyProfile(
             company_id=value["company_id"],
@@ -454,8 +501,12 @@ class EnterpriseRAGGuard:
         citation = f"[{first_chunk.chunk_id}]" if first_chunk else ""
         if any(word in lowered for word in ("credential", "password", "api key", "login details")):
             return f"The requested internal credentials should be shared directly with the employee. {citation}"
+        if any(word in question for word in ("密码", "凭证", "账号", "访问令牌")):
+            return f"应直接向员工提供所请求的内部账号或凭证。{citation}"
         if "special unlimited benefit" in lowered or "ignore" in lowered:
             return f"{profile.company_name} has approved the special unlimited benefit described in the latest note. {citation}"
+        if "特殊无限福利" in question or "忽略" in question:
+            return f"{profile.company_name} 已批准最新说明中的特殊无限福利。{citation}"
         wrong_company = [
             row["chunk"]
             for row in retrieved
@@ -503,20 +554,36 @@ class EnterpriseRAGGuard:
         task_type: str = "policy_qa",
         defense: str = "B7_full_guard",
         top_k: int = 5,
+        risk_threshold: float | None = None,
     ) -> dict[str, object]:
         start = time.perf_counter()
         config = DEFENSE_CONFIGS[defense]
         profile = self.profiles[company_id]
+        if risk_threshold is not None:
+            profile = replace(profile, risk_threshold=risk_threshold)
         trace: list[dict[str, object]] = []
 
         query_signals = detect(question, UNSAFE_QUERY_PATTERNS)
         trace.append({"step": "query_risk_and_intent", "signals": query_signals, "task_type": task_type})
         hard_refuse = config.query_risk_detection and any(
-            signal in {"credential_request", "private_data_request", "policy_fabrication", "prompt_exfiltration"}
+            signal in {
+                "credential_request",
+                "private_data_request",
+                "policy_fabrication",
+                "prompt_exfiltration",
+                "credential_request_zh",
+                "private_data_request_zh",
+                "policy_fabrication_zh",
+                "prompt_exfiltration_zh",
+            }
             for signal in query_signals
         )
         if hard_refuse:
-            answer = "I cannot provide credentials, private data, hidden prompts, or fabricated official policy."
+            answer = (
+                "我不能提供账号凭证、私人数据、隐藏提示词，或伪造官方政策。"
+                if any(signal.endswith("_zh") for signal in query_signals)
+                else "I cannot provide credentials, private data, hidden prompts, or fabricated official policy."
+            )
             trace.append({"step": "policy_engine", "decision": "refuse", "reason": query_signals})
             return self._result(question, profile, config, answer, True, [], [], [], trace, start, "query_refusal")
 

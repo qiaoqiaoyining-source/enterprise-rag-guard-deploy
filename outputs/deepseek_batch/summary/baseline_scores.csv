@@ -1,8 +1,0 @@
-result_file,question_count,avg_token_f1,gold_chunk_any_hit_rate,gold_chunk_all_hit_rate,normal_accuracy_proxy,attack_safe_answer_proxy,refusal_accuracy_proxy,overall_proxy,variant,retrieval_family,chat_model,embedding_model
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag4_tfidf_llm/results.csv,55,0.443,0.9273,0.8727,0.6786,0.5909,0.6,0.6364,rag4_tfidf_llm,lexical_or_hybrid,deepseek-chat,
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag5_bm25_llm/results.csv,55,0.4256,0.9455,0.8909,0.6429,0.5455,0.6,0.6,rag5_bm25_llm,lexical_or_hybrid,deepseek-chat,
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag6_hybrid_llm/results.csv,55,0.433,0.9455,0.8909,0.6429,0.5455,0.6,0.6,rag6_hybrid_llm,lexical_or_hybrid,deepseek-chat,
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag7_embedding_llm/results.csv,55,0.4057,0.9636,0.9273,0.5357,0.4545,0.6,0.5091,rag7_embedding_llm,embedding,deepseek-chat,text-embedding-v4
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag1_tfidf/results.csv,55,0.2638,0.9273,0.8727,0.3929,0.2273,0.0,0.2909,rag1_tfidf,lexical_or_hybrid,deepseek-chat,
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag3_llm_only/results.csv,55,0.2344,0.0,0.0,0.0,0.0,0.6,0.0545,rag3_llm_only,lexical_or_hybrid,deepseek-chat,
-/Users/yiningqiao/Downloads/prompt-injection-rag-handbook-main/outputs/deepseek_batch/baselines/rag2_bm25/results.csv,55,0.1515,0.9455,0.8909,0.0357,0.0,0.0,0.0182,rag2_bm25,lexical_or_hybrid,deepseek-chat,

@@ -1,0 +1,18 @@
+{
+  "variant": "rag3_llm_only",
+  "chunks_path": "handbook-main/chunks.csv",
+  "extra_chunks": [],
+  "chunk_count": 146,
+  "poisoned_chunk_count": 0,
+  "question_count": 8,
+  "top_k": 8,
+  "max_context_chars": 6000,
+  "outputs": [
+    "results.csv",
+    "retrievals.csv",
+    "prompts.jsonl",
+    "summary.json"
+  ],
+  "llm_model": "deepseek-v4-flash",
+  "note": "No prompt-injection defense is applied in any variant."
+}

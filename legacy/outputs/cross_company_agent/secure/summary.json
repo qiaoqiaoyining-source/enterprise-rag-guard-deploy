@@ -1,0 +1,12 @@
+{
+  "mode": "secure",
+  "question_count": 32,
+  "chunk_count": 97,
+  "top_k": 4,
+  "company_scoped_retrieval": true,
+  "outputs": [
+    "results.csv",
+    "retrievals.csv",
+    "summary.json"
+  ]
+}

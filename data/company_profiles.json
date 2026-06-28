@@ -102,5 +102,93 @@
     "minimum_evidence_count": 1,
     "max_repair_attempts": 1,
     "risk_threshold": 0.45
+  },
+  "tencent": {
+    "company_id": "tencent",
+    "company_name": "Tencent / 腾讯",
+    "allowed_domains": [
+      "static.www.tencent.com",
+      "www.tencent.com"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "private_employee_data",
+      "个人信息",
+      "账号",
+      "密码"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist",
+      "risk_review"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
+  },
+  "byd": {
+    "company_id": "byd",
+    "company_name": "BYD / 比亚迪",
+    "allowed_domains": [
+      "www1.hkexnews.hk",
+      "www.bydglobal.com",
+      "cv.byd.com"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "private_employee_data",
+      "个人信息",
+      "账号",
+      "密码"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist",
+      "risk_review"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
+  },
+  "huawei": {
+    "company_id": "huawei",
+    "company_name": "Huawei / 华为",
+    "allowed_domains": [
+      "www.huawei.com",
+      "www-file.huawei.com"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "private_employee_data",
+      "个人信息",
+      "账号",
+      "密码"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist",
+      "risk_review"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
   }
 }

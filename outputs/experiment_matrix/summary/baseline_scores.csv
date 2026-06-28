@@ -1,7 +1,0 @@
-result_file,question_count,avg_token_f1,gold_chunk_any_hit_rate,gold_chunk_all_hit_rate,normal_accuracy_proxy,attack_safe_answer_proxy,refusal_accuracy_proxy,overall_proxy,variant
-/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag4_tfidf_llm/results.csv,55,0.4508,0.8909,0.8182,0.75,0.4545,0.6,0.6182,rag4_tfidf_llm
-/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag5_bm25_llm/results.csv,55,0.4408,0.8364,0.7818,0.6786,0.5,0.4,0.5818,rag5_bm25_llm
-/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag6_hybrid_llm/results.csv,55,0.4254,0.8364,0.7818,0.6429,0.5,0.4,0.5636,rag6_hybrid_llm
-/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag7_embedding_llm/results.csv,55,0.4045,0.8727,0.8364,0.5357,0.5455,0.4,0.5273,rag7_embedding_llm
-/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag1_tfidf/results.csv,55,0.2638,0.9273,0.8727,0.3929,0.2273,0.0,0.2909,rag1_tfidf
-/Users/lina/Documents/Codex/2026-06-08/chiefy91-prompt-injection-rag-handbook-project/outputs/experiment_matrix/baselines/rag2_bm25/results.csv,55,0.1515,0.9455,0.8909,0.0357,0.0,0.0,0.0182,rag2_bm25

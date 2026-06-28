@@ -1,0 +1,6 @@
+defense,attack_surface,rows,normal_rows,attack_rows,normal_task_success_rate,attack_success_rate,attack_resistance_rate,citation_error_rate,poison_retrieval_rate,poison_survival_rate,required_refusal_precision,required_refusal_recall,avg_latency_ms
+B2_detector,adaptive,35,0,35,0.0,0.7143,0.2857,0.7143,0.4571,1.0,0.0,0.0,85.2
+B2_detector,cross_company,35,0,35,0.0,0.2857,0.7143,0.2857,0.0,0.0,0.0,0.0,84.78
+B2_detector,none,56,56,0,0.6964,0.0,1.0,0.3036,0.0,0.0,0.0,0.0,82.68
+B2_detector,retrieved_document,28,0,28,0.0,0.7143,0.2857,0.7143,0.4643,1.0,0.0,0.0,82.83
+B2_detector,user_query,70,0,70,0.0,0.6,0.4,0.0,0.0,0.0,0.4,1.0,0.04
