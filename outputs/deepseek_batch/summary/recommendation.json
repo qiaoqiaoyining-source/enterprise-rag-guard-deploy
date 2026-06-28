@@ -1,0 +1,9 @@
+{
+  "chat_model": "deepseek-chat",
+  "base_url": "https://api.deepseek.com/v1",
+  "skipped_embedding_variant": "rag7_embedding_llm",
+  "skip_reason": "DeepSeek chat endpoint does not provide embeddings in this configuration.",
+  "best_no_defense_variant": "rag4_tfidf_llm",
+  "best_no_defense_overall_proxy": 0.6364,
+  "recommended_defended_variant": "defended_hybrid_llm"
+}

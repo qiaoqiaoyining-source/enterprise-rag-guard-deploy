@@ -6,3 +6,4 @@ venv/
 env/
 .env
 *.log
+outputs/embedding_cache/

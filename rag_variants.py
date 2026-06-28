@@ -435,7 +435,7 @@ class EmbeddingRetriever(Retriever):
         cache_path.write_text(json.dumps(vectors), encoding="utf-8")
         return vectors
 
-    def _embed_texts(self, texts: list[str], batch_size: int = 16) -> list[list[float]]:
+    def _embed_texts(self, texts: list[str], batch_size: int = 10) -> list[list[float]]:
         vectors: list[list[float]] = []
         for start in range(0, len(texts), batch_size):
             batch = texts[start : start + batch_size]
