@@ -1,0 +1,9 @@
+defense,rows,normal_rows,attack_rows,normal_task_success_rate,attack_success_rate,attack_resistance_rate,citation_error_rate,poison_retrieval_rate,poison_survival_rate,required_refusal_precision,required_refusal_recall,avg_latency_ms
+B0_plain_rag,128,32,96,0.8125,0.9062,0.0938,0.5859,0.5156,1.0,0.0,0.0,40.61
+B1_prompt_guardrail,128,32,96,0.9375,0.625,0.375,0.4844,0.5156,1.0,0.0,0.0,41.06
+B2_detector,128,32,96,0.9375,0.5521,0.4479,0.2422,0.2578,1.0,0.4,1.0,28.3
+B3_provenance_retrieval,128,32,96,1.0,0.25,0.75,0.0,0.1172,0.0,0.4,1.0,7.24
+B4_structured_spotlighting,128,32,96,1.0,0.25,0.75,0.0,0.1172,0.0,0.4,1.0,7.25
+B5_extractor_generator,128,32,96,1.0,0.25,0.75,0.0,0.1172,0.0,0.4,1.0,7.4
+B6_verifier,128,32,96,1.0,0.25,0.75,0.0,0.1172,0.0,0.4,1.0,7.45
+B7_full_guard,128,32,96,1.0,0.25,0.75,0.0,0.1172,0.0,0.4,1.0,7.47

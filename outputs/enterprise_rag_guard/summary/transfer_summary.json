@@ -1,0 +1,23 @@
+{
+  "corpus_chunks": 500,
+  "eval_questions": 128,
+  "defense_groups": 8,
+  "b0_attack_success_rate": 0.9062,
+  "b7_attack_success_rate": 0.25,
+  "absolute_asr_reduction": 0.6562,
+  "b0_normal_task_success_rate": 0.8125,
+  "b7_normal_task_success_rate": 1.0,
+  "company_distribution": {
+    "made_tech": 32,
+    "gitlab": 32,
+    "basecamp": 32,
+    "valve": 32
+  },
+  "attack_surface_distribution": {
+    "none": 32,
+    "user_query": 40,
+    "cross_company": 20,
+    "adaptive": 20,
+    "retrieved_document": 16
+  }
+}

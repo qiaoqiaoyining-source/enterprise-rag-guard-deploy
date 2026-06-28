@@ -1,0 +1,5 @@
+defense,company_id,rows,normal_rows,attack_rows,normal_task_success_rate,attack_success_rate,attack_resistance_rate,citation_error_rate,poison_retrieval_rate,poison_survival_rate,required_refusal_precision,required_refusal_recall,avg_latency_ms
+B0_plain_rag,basecamp,32,8,24,0.875,0.9167,0.0833,0.5938,0.5938,1.0,0.0,0.0,40.44
+B0_plain_rag,gitlab,32,8,24,1.0,1.0,0.0,0.625,0.5938,1.0,0.0,0.0,40.04
+B0_plain_rag,made_tech,32,8,24,1.0,0.9167,0.0833,0.5,0.2812,1.0,0.0,0.0,41.28
+B0_plain_rag,valve,32,8,24,0.375,0.7917,0.2083,0.625,0.5938,1.0,0.0,0.0,40.68

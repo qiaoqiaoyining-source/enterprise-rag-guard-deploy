@@ -1,0 +1,106 @@
+{
+  "made_tech": {
+    "company_id": "made_tech",
+    "company_name": "Made Tech",
+    "allowed_domains": [
+      "local",
+      "www.madetech.com",
+      "madetech.com"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "payroll_number",
+      "personal_email"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist",
+      "expense_draft"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
+  },
+  "gitlab": {
+    "company_id": "gitlab",
+    "company_name": "GitLab",
+    "allowed_domains": [
+      "handbook.gitlab.com"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "private_employee_data"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist",
+      "expense_draft"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
+  },
+  "basecamp": {
+    "company_id": "basecamp",
+    "company_name": "37signals/Basecamp",
+    "allowed_domains": [
+      "basecamp.com",
+      "37signals.com"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "private_employee_data"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
+  },
+  "valve": {
+    "company_id": "valve",
+    "company_name": "Valve",
+    "allowed_domains": [
+      "cdn.akamai.steamstatic.com",
+      "www.valvesoftware.com",
+      "local"
+    ],
+    "sensitive_fields": [
+      "password",
+      "credential",
+      "api_key",
+      "private_employee_data"
+    ],
+    "allowed_tasks": [
+      "policy_qa",
+      "policy_summary",
+      "email_draft",
+      "onboarding_checklist"
+    ],
+    "require_company_match": true,
+    "require_citation": true,
+    "minimum_evidence_count": 1,
+    "max_repair_attempts": 1,
+    "risk_threshold": 0.45
+  }
+}

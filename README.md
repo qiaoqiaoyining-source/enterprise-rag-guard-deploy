@@ -11,6 +11,55 @@ The project now includes an upgraded track:
 Prompt-Injection Defense and Transfer Evaluation for Cross-Company Knowledge Agents
 ```
 
+## EnterpriseRAG-Guard Upgrade
+
+The latest version reframes the project as:
+
+```text
+EnterpriseRAG-Guard: A Transferable Defense Framework for Company-Specific Knowledge Agents
+```
+
+Each company is treated as having its own private RAG agent and knowledge-base
+boundary. The reusable contribution is a shared guard layer:
+
+```text
+Company Agent = Universal Security Core + Company Security Profile + Company Knowledge Base
+```
+
+The guard implements provenance-aware retrieval, instruction/evidence
+isolation, extractor-generator isolation, company adapters, citation/policy
+verification, and repair/refusal.
+
+Build the 500-chunk multi-company corpus:
+
+```bash
+python3 build_multi_company_corpus.py --target-total 500
+```
+
+Run the guard transfer and ablation experiment:
+
+```bash
+python3 run_guard_transfer_experiment.py --skip-build-corpus
+```
+
+Run the visual security console:
+
+```bash
+python3 guard_demo_server.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765
+```
+
+Detailed notes are in:
+
+```text
+docs/enterprise_rag_guard.md
+```
+
 Instead of evaluating only one employee-handbook RAG system, the upgraded track
 builds a task-oriented enterprise knowledge agent and tests whether its safety
 gateway transfers across company knowledge bases. It compares an ordinary
