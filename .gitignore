@@ -7,3 +7,4 @@ env/
 .env
 *.log
 outputs/embedding_cache/
+data/tenant_agents/

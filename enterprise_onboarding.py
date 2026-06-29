@@ -1,20 +1,34 @@
 #!/usr/bin/env python3
-"""Tenant onboarding and secure ingestion primitives for EnterpriseRAG-Guard.
+"""Tenant onboarding and secure ingestion for EnterpriseRAG-Guard.
 
-The research demo ships with seven public benchmark companies. This module
-models the product path for a new enterprise customer: create a tenant, connect
-knowledge sources, scan documents before indexing, and generate a tenant profile
+This module implements the product path for a new enterprise customer: create a
+tenant, ingest administrator-provided documents or public URLs, scan them before
+indexing, write a tenant-isolated knowledge store, and generate a tenant profile
 without rewriting the guard core.
 """
 
 from __future__ import annotations
 
 import hashlib
+import csv
+import json
 import re
 import time
 from dataclasses import asdict, dataclass, field
+from html.parser import HTMLParser
+from pathlib import Path
+from urllib import request as urlrequest
+from urllib.parse import urlparse
 
-from enterprise_rag_guard import CHUNK_RISK_PATTERNS, UNSAFE_QUERY_PATTERNS, detect
+from enterprise_rag_guard import (
+    CHUNK_RISK_PATTERNS,
+    TENANT_CHUNKS_PATH,
+    TENANT_PROFILES_PATH,
+    UNSAFE_QUERY_PATTERNS,
+    detect,
+    host,
+    stable_hash,
+)
 
 
 SENSITIVE_PATTERNS = {
@@ -78,6 +92,12 @@ class IngestionReport:
     documents_quarantined: int
     duplicate_documents: int
     findings: tuple[IngestionFinding, ...]
+    accepted_documents: tuple[DocumentRecord, ...] = ()
+    quarantined_documents: tuple[DocumentRecord, ...] = ()
+    indexed_chunks: int = 0
+    tenant_query_ready: bool = False
+    chunk_store: str = ""
+    profile_store: str = ""
     recommended_profile: dict[str, object] = field(default_factory=dict)
     pipeline_steps: tuple[str, ...] = (
         "file_type_validation",
@@ -93,6 +113,8 @@ class IngestionReport:
         data = asdict(self)
         data["tenant_profile"] = asdict(self.tenant_profile)
         data["findings"] = [asdict(finding) for finding in self.findings]
+        data["accepted_documents"] = [document_summary(doc) for doc in self.accepted_documents]
+        data["quarantined_documents"] = [document_summary(doc) for doc in self.quarantined_documents]
         return data
 
 
@@ -114,8 +136,8 @@ class KnowledgeConnector:
         return []
 
 
-class DemoTextConnector(KnowledgeConnector):
-    """A no-dependency connector used by the web demo onboarding wizard."""
+class AdminTextConnector(KnowledgeConnector):
+    """Connector for documents supplied directly by an enterprise admin."""
 
     source_type = "uploaded_text"
 
@@ -137,7 +159,7 @@ class DemoTextConnector(KnowledgeConnector):
         row = self.documents[index]
         title = row.get("title") or f"{self.company_name} knowledge document"
         content = row.get("content") or ""
-        source_uri = row.get("source_uri") or "demo://uploaded-text"
+        source_uri = row.get("source_uri") or f"tenant://{self.tenant_id}/uploaded-text"
         department = row.get("department") or "General"
         return DocumentRecord(
             tenant_id=self.tenant_id,
@@ -165,6 +187,8 @@ class SecureIngestionPipeline:
         accepted = 0
         quarantined = 0
         duplicates = 0
+        accepted_docs: list[DocumentRecord] = []
+        quarantined_docs: list[DocumentRecord] = []
         document_ids = connector.list_documents()
 
         for document_id in document_ids:
@@ -185,8 +209,10 @@ class SecureIngestionPipeline:
             findings.extend(doc_findings)
             if any(finding.action == "quarantine" for finding in doc_findings):
                 quarantined += 1
+                quarantined_docs.append(doc)
             else:
                 accepted += 1
+                accepted_docs.append(doc)
 
         recommended = {
             "tenant_id": self.tenant_profile.tenant_id,
@@ -204,6 +230,8 @@ class SecureIngestionPipeline:
             documents_quarantined=quarantined,
             duplicate_documents=duplicates,
             findings=tuple(findings),
+            accepted_documents=tuple(accepted_docs),
+            quarantined_documents=tuple(quarantined_docs),
             recommended_profile=recommended,
         )
 
@@ -246,8 +274,9 @@ class SecureIngestionPipeline:
                 )
             )
 
-        allowed = any(source in doc.source_uri for source in self.tenant_profile.allowed_sources)
-        if self.tenant_profile.allowed_sources and not allowed and not doc.source_uri.startswith("demo://"):
+        source_host = host(doc.source_uri)
+        allowed = any(source in doc.source_uri or source == source_host for source in self.tenant_profile.allowed_sources)
+        if self.tenant_profile.allowed_sources and not allowed and not doc.source_uri.startswith("tenant://"):
             findings.append(
                 IngestionFinding(
                     "medium",
@@ -259,13 +288,169 @@ class SecureIngestionPipeline:
         return findings
 
 
+class HTMLTextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        cleaned = re.sub(r"\s+", " ", data).strip()
+        if cleaned:
+            self.parts.append(cleaned)
+
+    def text(self) -> str:
+        return "\n".join(self.parts)
+
+
+def document_summary(doc: DocumentRecord) -> dict[str, object]:
+    return {
+        "document_id": doc.document_id,
+        "title": doc.title,
+        "source_type": doc.source_type,
+        "source_uri": doc.source_uri,
+        "department": doc.department,
+        "security_label": doc.security_label,
+        "content_hash": doc.content_hash,
+        "characters": len(doc.content),
+    }
+
+
 def tenant_id(company_name: str) -> str:
     base = re.sub(r"[^a-zA-Z0-9]+", "-", company_name.lower()).strip("-") or "tenant"
     suffix = hashlib.sha1(f"{company_name}-{time.time()}".encode("utf-8")).hexdigest()[:6]
     return f"{base}-{suffix}"
 
 
-def create_demo_tenant(
+def fetch_public_url(url: str, timeout: int = 15) -> dict[str, str]:
+    req = urlrequest.Request(
+        url,
+        headers={"User-Agent": "EnterpriseRAG-Guard-Onboarding/1.0"},
+        method="GET",
+    )
+    with urlrequest.urlopen(req, timeout=timeout) as response:
+        raw = response.read(2_000_000)
+        content_type = response.headers.get("Content-Type", "")
+    text = raw.decode("utf-8", errors="ignore")
+    if "html" in content_type or "<html" in text[:500].lower():
+        parser = HTMLTextExtractor()
+        parser.feed(text)
+        text = parser.text()
+    title = urlparse(url).netloc or url
+    return {"title": title, "content": text, "source_uri": url, "department": "Public Web"}
+
+
+def split_document(text: str, max_chars: int = 900, overlap: int = 120) -> list[str]:
+    normalized = re.sub(r"\r\n?", "\n", text or "").strip()
+    paragraphs = [part.strip() for part in re.split(r"\n{2,}|(?<=[。！？.!?])\s+", normalized) if part.strip()]
+    chunks: list[str] = []
+    current = ""
+    for paragraph in paragraphs:
+        if len(current) + len(paragraph) + 1 <= max_chars:
+            current = f"{current}\n{paragraph}".strip()
+            continue
+        if current:
+            chunks.append(current)
+        if len(paragraph) <= max_chars:
+            current = paragraph
+            continue
+        for start in range(0, len(paragraph), max_chars - overlap):
+            piece = paragraph[start : start + max_chars].strip()
+            if piece:
+                chunks.append(piece)
+        current = ""
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def write_tenant_profile(profile: TenantProfile) -> None:
+    TENANT_PROFILES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if TENANT_PROFILES_PATH.exists():
+        data = json.loads(TENANT_PROFILES_PATH.read_text(encoding="utf-8"))
+    else:
+        data = {}
+    data[profile.tenant_id] = {
+        "company_id": profile.tenant_id,
+        "company_name": profile.company_name,
+        "allowed_domains": list(profile.allowed_sources),
+        "sensitive_fields": list(profile.sensitive_fields),
+        "allowed_tasks": ["policy_qa", "policy_summary", "email_draft", "onboarding_checklist", "risk_review"],
+        "require_company_match": True,
+        "require_citation": True,
+        "minimum_evidence_count": 1,
+        "max_repair_attempts": profile.maximum_repair_attempts,
+        "risk_threshold": profile.chunk_risk_threshold,
+    }
+    TENANT_PROFILES_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def append_tenant_chunks(profile: TenantProfile, documents: tuple[DocumentRecord, ...]) -> int:
+    TENANT_CHUNKS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "chunk_id",
+        "company_id",
+        "company_name",
+        "source_url",
+        "source_type",
+        "doc_title",
+        "section_path",
+        "text",
+        "corpus_origin",
+        "is_poisoned",
+        "poison_strength",
+        "attack_goal",
+        "trust_level",
+        "document_version",
+        "effective_date",
+        "content_hash",
+        "instruction_risk_score",
+        "source_host",
+    ]
+    existing: set[str] = set()
+    if TENANT_CHUNKS_PATH.exists():
+        with TENANT_CHUNKS_PATH.open(newline="", encoding="utf-8-sig") as handle:
+            existing = {row.get("chunk_id", "") for row in csv.DictReader(handle)}
+    file_exists = TENANT_CHUNKS_PATH.exists()
+    written = 0
+    with TENANT_CHUNKS_PATH.open("a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        for doc in documents:
+            for index, chunk_text in enumerate(split_document(doc.content), start=1):
+                chunk_id = f"{profile.tenant_id.upper().replace('-', '_')}_{doc.document_id}_{index:03d}"
+                if chunk_id in existing:
+                    continue
+                source_host = host(doc.source_uri) or profile.tenant_id
+                risk_labels = detect(chunk_text, CHUNK_RISK_PATTERNS)
+                writer.writerow(
+                    {
+                        "chunk_id": chunk_id,
+                        "company_id": profile.tenant_id,
+                        "company_name": profile.company_name,
+                        "source_url": doc.source_uri,
+                        "source_type": doc.source_type,
+                        "doc_title": doc.title,
+                        "section_path": doc.department,
+                        "text": chunk_text,
+                        "corpus_origin": "tenant_ingested",
+                        "is_poisoned": "false",
+                        "poison_strength": "none",
+                        "attack_goal": "",
+                        "trust_level": "official",
+                        "document_version": doc.version,
+                        "effective_date": doc.effective_date,
+                        "content_hash": stable_hash(chunk_text),
+                        "instruction_risk_score": str(min(1.0, len(risk_labels) * 0.18)),
+                        "source_host": source_host,
+                    }
+                )
+                existing.add(chunk_id)
+                written += 1
+    return written
+
+
+def create_tenant_agent(
     company_name: str,
     language: str,
     industry: str,
@@ -273,8 +458,39 @@ def create_demo_tenant(
     source_kinds: list[str],
     allowed_sources: list[str],
     sample_text: str,
+    source_urls: list[str] | None = None,
 ) -> IngestionReport:
     tid = tenant_id(company_name)
+    documents: list[dict[str, str]] = []
+    if sample_text.strip():
+        documents.append(
+            {
+                "title": f"{company_name} uploaded knowledge document",
+                "content": sample_text,
+                "source_uri": f"tenant://{tid}/uploaded-text",
+                "department": "Admin Upload",
+            }
+        )
+    fetch_findings: list[IngestionFinding] = []
+    for url in source_urls or []:
+        if not url.strip():
+            continue
+        try:
+            documents.append(fetch_public_url(url.strip()))
+        except Exception as exc:
+            fetch_findings.append(
+                IngestionFinding(
+                    "medium",
+                    "source_fetch_failed",
+                    f"Could not fetch {url.strip()}: {exc}",
+                    "review",
+                )
+            )
+    source_hosts = [host(doc.get("source_uri", "")) for doc in documents if doc.get("source_uri")]
+    merged_allowed = [source.strip() for source in allowed_sources if source.strip()]
+    merged_allowed.extend(item for item in source_hosts if item)
+    merged_allowed.append(tid)
+    merged_allowed = list(dict.fromkeys(merged_allowed))
     profile = TenantProfile(
         tenant_id=tid,
         company_name=company_name,
@@ -282,28 +498,38 @@ def create_demo_tenant(
         industry=industry,
         isolation_level="index-per-tenant",
         deployment_mode=deployment_mode,
-        allowed_sources=tuple(source.strip() for source in allowed_sources if source.strip()),
+        allowed_sources=tuple(merged_allowed),
         sensitive_fields=("password", "credential", "api_key", "payroll", "personal_id", "个人信息", "密码"),
     )
-    documents = [
-        {
-            "title": f"{company_name} onboarding sample",
-            "content": sample_text
-            or f"{company_name} employees can ask HR, IT, compliance, and policy questions through the secure knowledge assistant.",
-            "source_uri": "demo://uploaded-text",
-            "department": "HR",
-        }
-    ]
-    connector = DemoTextConnector(tid, company_name, documents)
+    connector = AdminTextConnector(tid, company_name, documents)
     report = SecureIngestionPipeline(profile).scan(connector)
-    data = report.to_dict()
-    data["source_kinds"] = source_kinds
+    indexed_chunks = 0
+    if report.accepted_documents:
+        indexed_chunks = append_tenant_chunks(profile, report.accepted_documents)
+        write_tenant_profile(profile)
+    active_sources = []
+    if sample_text.strip():
+        active_sources.append("Uploaded Text")
+    if source_urls:
+        active_sources.append("Public URL")
     return IngestionReport(
         tenant_profile=report.tenant_profile,
         documents_seen=report.documents_seen,
         documents_accepted=report.documents_accepted,
         documents_quarantined=report.documents_quarantined,
         duplicate_documents=report.duplicate_documents,
-        findings=report.findings,
-        recommended_profile={**report.recommended_profile, "source_kinds": source_kinds},
+        findings=tuple(list(report.findings) + fetch_findings),
+        accepted_documents=report.accepted_documents,
+        quarantined_documents=report.quarantined_documents,
+        indexed_chunks=indexed_chunks,
+        tenant_query_ready=indexed_chunks > 0,
+        chunk_store=str(TENANT_CHUNKS_PATH),
+        profile_store=str(TENANT_PROFILES_PATH),
+        recommended_profile={
+            **report.recommended_profile,
+            "source_kinds_requested": source_kinds,
+            "source_kinds_active": active_sources,
+            "query_ready": indexed_chunks > 0,
+            "indexed_chunks": indexed_chunks,
+        },
     )

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EnterpriseRAG-Guard product demo server."""
+"""EnterpriseRAG-Guard product server."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from enterprise_onboarding import create_demo_tenant
-from enterprise_rag_guard import GuardChunk, EnterpriseRAGGuard, build_guard, default_profiles, stable_hash
+from enterprise_onboarding import create_tenant_agent
+from enterprise_rag_guard import GuardChunk, EnterpriseRAGGuard, build_guard, stable_hash
 
 
 HOST = os.getenv("GUARD_HOST", "0.0.0.0")
@@ -294,7 +294,7 @@ HTML = r"""<!doctype html>
       font-size: 13px;
     }
     .check input { width: auto; min-height: auto; }
-    .report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
     .report-box { border: 1px solid #e6eaf2; border-radius: 13px; padding: 12px; background: #fbfcff; }
     .report-box b { display: block; font-size: 22px; }
     .report-box span { color: var(--muted); font-size: 12px; }
@@ -362,8 +362,8 @@ HTML = r"""<!doctype html>
         </div>
         <div class="role-grid">
           <div class="role-card" data-page="assistant"><b>员工知识助手</b><span>向企业 Agent 提问，并查看可信证据、隔离区和完整防御链路。</span></div>
-          <div class="role-card" data-page="challenge"><b>攻击挑战台</b><span>模拟提示词注入、凭证索取、跨公司污染和投毒文档。</span></div>
-          <div class="role-card" data-page="onboard"><b>企业接入向导</b><span>模拟客户如何接入自己的知识源并生成租户安全配置。</span></div>
+          <div class="role-card" data-page="challenge"><b>攻击挑战台</b><span>输入真实攻击问题，比较普通 RAG 和安全 Agent 的响应。</span></div>
+          <div class="role-card" data-page="onboard"><b>企业接入向导</b><span>接入真实资料或公开网页，生成租户安全配置并立即查询。</span></div>
         </div>
       </div>
       <div class="hero-card">
@@ -447,7 +447,7 @@ HTML = r"""<!doctype html>
           <div>
             <div class="page-kicker">Red Team Challenge</div>
             <h2 class="page-title">攻击挑战台</h2>
-            <p class="page-copy">模拟攻击者输入同一句问题，观察普通 RAG 和安全 Agent 的差异，并查看每一步风险检测、证据隔离和引用验证。</p>
+            <p class="page-copy">攻击者输入同一句问题，观察普通 RAG 和安全 Agent 的差异，并查看每一步风险检测、证据隔离和引用验证。</p>
           </div>
         </div>
 
@@ -533,7 +533,7 @@ HTML = r"""<!doctype html>
           <div>
             <div class="page-kicker">Tenant Onboarding</div>
             <h2 class="page-title">创建你的企业安全 Agent</h2>
-            <p class="page-copy">真实产品不要求客户把文件交给我们手工处理。企业管理员可以连接数据源，系统自动扫描、隔离风险文档并生成租户安全配置。</p>
+            <p class="page-copy">企业管理员提交真实知识资料或公开网页，系统会执行安全扫描、切块索引、租户隔离和 Profile 生成。接入成功后，新企业会立即出现在员工查询中。</p>
           </div>
         </div>
         <div class="onboard-grid">
@@ -551,16 +551,18 @@ HTML = r"""<!doctype html>
             <input id="allowedSources" value="acme.example.com, sharepoint.acme.local">
             <label>计划接入的数据源</label>
             <div class="source-list">
-              <label class="check"><input type="checkbox" name="sourceKind" value="Upload Files" checked> 上传 PDF / Word</label>
-              <label class="check"><input type="checkbox" name="sourceKind" value="SharePoint" checked> SharePoint</label>
-              <label class="check"><input type="checkbox" name="sourceKind" value="Confluence"> Confluence</label>
-              <label class="check"><input type="checkbox" name="sourceKind" value="Website"> 官网 / Wiki</label>
-              <label class="check"><input type="checkbox" name="sourceKind" value="Vector DB"> 现有向量库</label>
-              <label class="check"><input type="checkbox" name="sourceKind" value="Internal API"> 内部 API</label>
+              <label class="check"><input type="checkbox" name="sourceKind" value="Uploaded Text" checked> 管理员粘贴资料</label>
+              <label class="check"><input type="checkbox" name="sourceKind" value="Public URL" checked> 公开网页 URL</label>
+              <label class="check"><input type="checkbox" name="sourceKind" value="SharePoint"> SharePoint 待配置</label>
+              <label class="check"><input type="checkbox" name="sourceKind" value="Confluence"> Confluence 待配置</label>
+              <label class="check"><input type="checkbox" name="sourceKind" value="Vector DB"> 现有向量库待配置</label>
+              <label class="check"><input type="checkbox" name="sourceKind" value="Internal API"> 内部 API 待配置</label>
             </div>
-            <label>示例文档内容</label>
-            <textarea id="sampleDoc">员工可以通过企业知识助手查询福利、IT 支持、合规政策和报销流程。任何包含密码、访问令牌或要求忽略安全规则的文档都必须先进入人工复核。</textarea>
-            <button class="btn primary" id="runOnboarding" style="width:100%;margin-top:12px">扫描并生成租户安全配置</button>
+            <label>公开网页 URL，一行一个</label>
+            <textarea id="sourceUrls" placeholder="https://www.example.com/handbook&#10;https://www.example.com/policy"></textarea>
+            <label>企业知识资料</label>
+            <textarea id="sampleDoc">员工可以通过企业知识助手查询福利、IT 支持、合规政策和报销流程。年假申请需要在 HR 系统提交，报销需要保留发票并经过直属主管审批，合规问题应参考正式制度并保留引用。</textarea>
+            <button class="btn primary" id="runOnboarding" style="width:100%;margin-top:12px">接入、扫描并创建可查询 Agent</button>
           </div>
           <div class="panel">
             <h3>接入扫描结果</h3>
@@ -570,7 +572,7 @@ HTML = r"""<!doctype html>
                 <div class="report-box"><b>-</b><span>可索引文档</span></div>
                 <div class="report-box"><b>-</b><span>隔离文档</span></div>
               </div>
-              <p style="color:var(--muted);line-height:1.6">点击左侧按钮后，系统会模拟企业自助接入：创建租户、扫描文档风险、推荐安全 Profile，并保持每个租户独立索引。</p>
+              <p style="color:var(--muted);line-height:1.6">点击左侧按钮后，系统会创建租户、扫描文档风险、写入独立知识索引，并刷新员工查询中的企业 Agent 列表。</p>
             </div>
             <label>推荐 Tenant Profile</label>
             <pre class="code" id="tenantProfile">{}</pre>
@@ -747,19 +749,40 @@ async function runOnboarding() {
     deployment_mode: $('#deploymentMode').value,
     allowed_sources: $('#allowedSources').value.split(',').map(s => s.trim()).filter(Boolean),
     source_kinds: sourceKinds,
-    sample_text: $('#sampleDoc').value
+    sample_text: $('#sampleDoc').value,
+    source_urls: $('#sourceUrls').value.split(/\n|,/).map(s => s.trim()).filter(Boolean)
   };
+  $('#onboardReport').innerHTML = '<p style="color:var(--muted);line-height:1.6">正在抓取资料、扫描风险、切块并写入租户索引...</p>';
   const report = await api('/api/onboard', payload);
+  if (report.companies) {
+    companies = report.companies;
+    const options = companies.map(c => `<option value="${c.company_id}" data-lang="${c.language}">${escapeHtml(c.label)}</option>`).join('');
+    for (const id of ['company', 'challengeCompany', 'injectCompany']) $( '#' + id ).innerHTML = options;
+  }
+  const tenantId = report.tenant_profile?.tenant_id;
   const findings = report.findings || [];
   $('#onboardReport').innerHTML = `
     <div class="report-grid">
       <div class="report-box"><b>${report.documents_seen}</b><span>已发现文档</span></div>
       <div class="report-box"><b>${report.documents_accepted}</b><span>可索引文档</span></div>
       <div class="report-box"><b>${report.documents_quarantined}</b><span>隔离文档</span></div>
+      <div class="report-box"><b>${report.indexed_chunks}</b><span>已写入 chunks</span></div>
     </div>
-    ${findings.length ? findings.map(f => `<div class="finding ${escapeHtml(f.severity)}"><b>${escapeHtml(f.category)}</b><br>${escapeHtml(f.message)}<br>建议动作：${escapeHtml(f.action)}</div>`).join('') : '<div class="finding low"><b>scan_clean</b><br>示例文档通过基础安全摄取扫描，可以进入切分和索引阶段。</div>'}
+    ${report.tenant_query_ready && tenantId ? `<button class="btn primary" style="width:100%;margin:10px 0" id="queryTenant">用新企业 Agent 查询</button>` : ''}
+    ${findings.length ? findings.map(f => `<div class="finding ${escapeHtml(f.severity)}"><b>${escapeHtml(f.category)}</b><br>${escapeHtml(f.message)}<br>建议动作：${escapeHtml(f.action)}</div>`).join('') : '<div class="finding low"><b>scan_clean</b><br>资料已通过基础安全摄取扫描，并写入租户独立索引。</div>'}
   `;
   $('#tenantProfile').textContent = JSON.stringify(report.recommended_profile, null, 2);
+  const queryButton = $('#queryTenant');
+  if (queryButton && tenantId) {
+    queryButton.addEventListener('click', () => {
+      $('#company').value = tenantId;
+      $('#language').value = report.tenant_profile.language || 'zh';
+      $('#question').value = report.tenant_profile.language === 'en'
+        ? `Summarize ${report.tenant_profile.company_name}'s connected knowledge with citations.`
+        : `请总结${report.tenant_profile.company_name}已接入资料中的主要政策，并给出引用。`;
+      showPage('assistant');
+    });
+  }
 }
 
 $('#run').addEventListener('click', run);
@@ -797,22 +820,25 @@ def company_meta() -> list[dict[str, str]]:
     counts: dict[str, int] = {}
     language: dict[str, str] = {}
     names: dict[str, str] = {}
+    profiles = GUARD.profiles
     zh_companies = {
         "tencent": ("腾讯 / Tencent", "zh"),
         "byd": ("比亚迪 / BYD", "zh"),
         "huawei": ("华为 / Huawei", "zh"),
     }
+    preferred = ["tencent", "byd", "huawei", "gitlab", "basecamp", "valve", "made_tech"]
     for chunk in GUARD.chunks:
         if chunk.corpus_origin == "synthetic_poison":
             continue
         counts[chunk.company_id] = counts.get(chunk.company_id, 0) + 1
+        profile = profiles.get(chunk.company_id)
         if chunk.company_id in zh_companies:
             names.setdefault(chunk.company_id, zh_companies[chunk.company_id][0])
             language.setdefault(chunk.company_id, zh_companies[chunk.company_id][1])
         else:
+            names.setdefault(chunk.company_id, profile.company_name if profile else chunk.company_name)
             language.setdefault(chunk.company_id, "zh" if any("\u4e00" <= ch <= "\u9fff" for ch in chunk.text[:500]) else "en")
-            names.setdefault(chunk.company_id, chunk.company_name)
-    order = ["tencent", "byd", "huawei", "gitlab", "basecamp", "valve", "made_tech"]
+    order = preferred + sorted(cid for cid in counts if cid not in preferred)
     return [
         {
             "company_id": cid,
@@ -830,7 +856,7 @@ def injected_chunk(payload: dict[str, object]) -> GuardChunk | None:
     if not isinstance(injected, dict) or not injected.get("text"):
         return None
     company_id = str(injected.get("company_id") or payload.get("company_id") or "tencent")
-    profile = default_profiles().get(company_id)
+    profile = GUARD.profiles.get(company_id)
     company_name = profile.company_name if profile else company_id
     source_mode = injected.get("source_mode", "untrusted")
     source_host = next(iter(profile.allowed_domains), "local") if profile and source_mode == "official" else "attacker.local"
@@ -958,7 +984,8 @@ class Handler(BaseHTTPRequestHandler):
         self.json(response)
 
     def handle_onboard(self, payload: dict[str, object]) -> None:
-        report = create_demo_tenant(
+        global GUARD
+        report = create_tenant_agent(
             company_name=str(payload.get("company_name") or "New Enterprise"),
             language=str(payload.get("language") or "zh"),
             industry=str(payload.get("industry") or "enterprise"),
@@ -966,13 +993,19 @@ class Handler(BaseHTTPRequestHandler):
             source_kinds=[str(item) for item in payload.get("source_kinds", []) if str(item).strip()],
             allowed_sources=[str(item) for item in payload.get("allowed_sources", []) if str(item).strip()],
             sample_text=str(payload.get("sample_text") or ""),
+            source_urls=[str(item) for item in payload.get("source_urls", []) if str(item).strip()],
         )
-        self.json(report.to_dict())
+        if report.tenant_query_ready:
+            GUARD = build_guard()
+            ASK_CACHE.clear()
+        data = report.to_dict()
+        data["companies"] = company_meta()
+        self.json(data)
 
 
 def main() -> None:
     server = ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"EnterpriseRAG-Guard product demo: http://127.0.0.1:{PORT}")
+    print(f"EnterpriseRAG-Guard product server: http://127.0.0.1:{PORT}")
     print(f"Generation mode: {generation_mode_label()}")
     server.serve_forever()
 

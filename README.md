@@ -25,8 +25,9 @@ Connector Layer + Tenant Isolation + Universal Guard + Company Adapter + Evaluat
 - Chinese company coverage with 200 chunks each for Tencent, BYD, and Huawei.
 - A bilingual security console where an employee can ask normal questions, or a
   red-team user can try prompt-injection attacks and watch the defense trace.
-- A product-style onboarding path where a new enterprise can connect its own
-  documents, run secure ingestion, and generate a tenant security profile.
+- A product-style onboarding path where a new enterprise can connect real
+  pasted knowledge text or public URLs, run secure ingestion, generate a tenant
+  security profile, and immediately query the new tenant Agent.
 - A B0-B7 ablation experiment showing how provenance checks, quarantine,
   instruction/evidence isolation, extraction, verification, and repair/refusal
   change attack success.
@@ -100,8 +101,17 @@ Supported product modules:
 - `SecureIngestionPipeline`
 - `IngestionReport`
 
-The demo implements a lightweight `/api/onboard` endpoint so a new company can be
-created from the website, scanned, and assigned a recommended tenant profile.
+The web server implements `/api/onboard` as a real ingestion endpoint for the
+course prototype. It accepts administrator-provided text and public URLs,
+fetches/normalizes the content, scans the documents, chunks accepted documents,
+writes a tenant-isolated runtime index under `data/tenant_agents/`, generates a
+tenant profile, reloads the guard, and makes the new company immediately
+available in the employee query page.
+
+SharePoint, Confluence, existing vector database, and internal API connectors are
+represented as connector contracts and product choices, but they require real
+enterprise credentials/OAuth setup before they can be enabled in production. The
+project does not pretend those private systems are connected without credentials.
 
 ## Defense Design
 
@@ -192,6 +202,8 @@ The repository includes production deployment files:
 ```text
 Dockerfile      # container entrypoint for cloud hosting
 render.yaml     # one-click Render-style web service definition
+docker-compose.yml
+deploy/Caddyfile
 .dockerignore   # excludes local secrets and caches from the image
 ```
 
@@ -212,6 +224,24 @@ Cloud platforms usually inject a `PORT` variable automatically. The server reads
 both `GUARD_PORT` and `PORT`, so the same code works locally and on hosted web
 services. Never place API keys in GitHub files; configure them only in the cloud
 provider's private environment-variable settings.
+
+Two stable public deployment paths are supported:
+
+1. Render Blueprint:
+   connect this GitHub repository, let Render read `render.yaml`, and set the two
+   secret keys in Render's environment-variable UI. The blueprint uses a starter
+   web service plus a 1 GB persistent disk mounted at `/app/data/tenant_agents`
+   so newly onboarded enterprise tenants do not disappear after restart.
+
+2. Cloud server with a domain:
+   point a domain to an Aliyun/Tencent Cloud/VPS server, install Docker, create a
+   server-side `.env` with `DOMAIN`, `DEEPSEEK_API_KEY`, and
+   `DASHSCOPE_API_KEY`, then start `docker compose up -d`. Caddy terminates HTTPS
+   and proxies traffic to the Python RAG service.
+
+The project cannot deploy itself to a public cloud without the owner's cloud
+account authorization. Temporary tunnel URLs are only for short demos and are not
+equivalent to a stable public product URL.
 
 ## Current Experiment Results
 
@@ -252,7 +282,8 @@ as a raw experiment dashboard. It supports:
 - red-team challenge mode with B0 control vs B7 secure answers;
 - defense trace, safe evidence, and quarantine panels;
 - a "Create Your Company Agent" onboarding wizard;
-- secure ingestion report and generated tenant profile.
+- secure ingestion report and generated tenant profile;
+- runtime tenant indexing for admin-pasted text and public URLs.
 
 ## Key Files
 

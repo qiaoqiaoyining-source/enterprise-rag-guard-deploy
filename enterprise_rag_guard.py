@@ -27,6 +27,8 @@ from urllib.parse import urlparse
 DEFAULT_CORPUS = Path("data/enterprise_corpus/company_chunks.csv")
 DEFAULT_PROFILES = Path("data/company_profiles.json")
 DEFAULT_EMBEDDING_CACHE_DIR = Path("outputs/embedding_cache")
+TENANT_CHUNKS_PATH = Path(os.getenv("TENANT_CHUNKS_PATH", "data/tenant_agents/chunks.csv"))
+TENANT_PROFILES_PATH = Path(os.getenv("TENANT_PROFILES_PATH", "data/tenant_agents/profiles.json"))
 
 
 def load_dotenv(path: Path = Path(".env")) -> None:
@@ -623,7 +625,7 @@ def write_default_profiles(path: Path = DEFAULT_PROFILES) -> None:
     path.write_text(json.dumps(serializable, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def load_profiles(path: Path = DEFAULT_PROFILES) -> dict[str, CompanyProfile]:
+def load_profiles(path: Path = DEFAULT_PROFILES, extra_paths: list[Path] | None = None) -> dict[str, CompanyProfile]:
     if not path.exists():
         write_default_profiles(path)
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -643,6 +645,9 @@ def load_profiles(path: Path = DEFAULT_PROFILES) -> dict[str, CompanyProfile]:
             changed = True
     if changed:
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    for extra in extra_paths or []:
+        if extra.exists():
+            data.update(json.loads(extra.read_text(encoding="utf-8")))
     return {
         key: CompanyProfile(
             company_id=value["company_id"],
@@ -1213,9 +1218,9 @@ def make_poison_chunks(companies: list[str]) -> list[GuardChunk]:
 
 
 def build_guard() -> EnterpriseRAGGuard:
-    chunks = load_chunks(DEFAULT_CORPUS)
+    chunks = load_chunks(DEFAULT_CORPUS, extra_paths=[TENANT_CHUNKS_PATH])
     chunks.extend(make_poison_chunks(sorted(default_profiles().keys())))
-    return EnterpriseRAGGuard(chunks, load_profiles())
+    return EnterpriseRAGGuard(chunks, load_profiles(extra_paths=[TENANT_PROFILES_PATH]))
 
 
 if __name__ == "__main__":

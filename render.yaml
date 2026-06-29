@@ -2,11 +2,19 @@ services:
   - type: web
     name: enterprise-rag-guard
     env: docker
-    plan: free
+    plan: starter
     autoDeploy: true
+    disk:
+      name: enterprise-rag-guard-data
+      mountPath: /app/data/tenant_agents
+      sizeGB: 1
     envVars:
       - key: GUARD_HOST
         value: 0.0.0.0
+      - key: TENANT_CHUNKS_PATH
+        value: /app/data/tenant_agents/chunks.csv
+      - key: TENANT_PROFILES_PATH
+        value: /app/data/tenant_agents/profiles.json
       - key: GUARD_USE_LLM
         value: "1"
       - key: GUARD_USE_TRANSLATION
