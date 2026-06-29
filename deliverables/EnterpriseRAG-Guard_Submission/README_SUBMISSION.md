@@ -1,6 +1,6 @@
-# EnterpriseRAG-Guard Submission Package
+# Enterprise-RAG-Guard Submission Package
 
-This package contains the final course-project deliverables for EnterpriseRAG-Guard.
+This package contains the final course-project deliverables for Enterprise-RAG-Guard.
 
 ## Public Demo
 
