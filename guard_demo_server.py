@@ -830,13 +830,16 @@ def company_meta() -> list[dict[str, str]]:
     for chunk in GUARD.chunks:
         if chunk.corpus_origin == "synthetic_poison":
             continue
-        counts[chunk.company_id] = counts.get(chunk.company_id, 0) + 1
         profile = profiles.get(chunk.company_id)
+        display_name = (profile.company_name if profile else chunk.company_name).strip()
+        if display_name.lower() in {"x", "test", "demo test"}:
+            continue
+        counts[chunk.company_id] = counts.get(chunk.company_id, 0) + 1
         if chunk.company_id in zh_companies:
             names.setdefault(chunk.company_id, zh_companies[chunk.company_id][0])
             language.setdefault(chunk.company_id, zh_companies[chunk.company_id][1])
         else:
-            names.setdefault(chunk.company_id, profile.company_name if profile else chunk.company_name)
+            names.setdefault(chunk.company_id, display_name)
             language.setdefault(chunk.company_id, "zh" if any("\u4e00" <= ch <= "\u9fff" for ch in chunk.text[:500]) else "en")
     order = preferred + sorted(cid for cid in counts if cid not in preferred)
     return [
