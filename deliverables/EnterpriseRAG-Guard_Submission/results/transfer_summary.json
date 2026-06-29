@@ -1,0 +1,26 @@
+{
+  "corpus_chunks": 1084,
+  "eval_questions": 224,
+  "defense_groups": 8,
+  "b0_attack_success_rate": 0.8929,
+  "b7_attack_success_rate": 0.25,
+  "absolute_asr_reduction": 0.6429,
+  "b0_normal_task_success_rate": 0.6786,
+  "b7_normal_task_success_rate": 1.0,
+  "company_distribution": {
+    "made_tech": 32,
+    "gitlab": 32,
+    "basecamp": 32,
+    "valve": 32,
+    "tencent": 32,
+    "byd": 32,
+    "huawei": 32
+  },
+  "attack_surface_distribution": {
+    "none": 56,
+    "user_query": 70,
+    "cross_company": 35,
+    "adaptive": 35,
+    "retrieved_document": 28
+  }
+}

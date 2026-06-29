@@ -1,0 +1,43 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      GUARD_HOST: 0.0.0.0
+      GUARD_PORT: 8765
+      TENANT_CHUNKS_PATH: /app/data/tenant_agents/chunks.csv
+      TENANT_PROFILES_PATH: /app/data/tenant_agents/profiles.json
+      EMBEDDING_CACHE_DIR: /app/outputs/embedding_cache
+      GUARD_USE_LLM: "1"
+      GUARD_USE_TRANSLATION: "1"
+      GUARD_USE_EMBEDDING: "1"
+      GUARD_FAST_MODE: "1"
+      GUARD_EMBEDDING_SHORTLIST: "20"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+    volumes:
+      - tenant_agents:/app/data/tenant_agents
+      - embedding_cache:/app/outputs/embedding_cache
+    expose:
+      - "8765"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  tenant_agents:
+  embedding_cache:
+  caddy_data:
+  caddy_config:

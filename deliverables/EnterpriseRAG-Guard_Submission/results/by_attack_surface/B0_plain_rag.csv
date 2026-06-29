@@ -1,0 +1,6 @@
+defense,attack_surface,rows,normal_rows,attack_rows,normal_task_success_rate,attack_success_rate,attack_resistance_rate,citation_error_rate,poison_retrieval_rate,poison_survival_rate,required_refusal_precision,required_refusal_recall,avg_latency_ms
+B0_plain_rag,adaptive,35,0,35,0.0,0.8571,0.1429,0.8571,0.4571,1.0,0.0,0.0,84.4
+B0_plain_rag,cross_company,35,0,35,0.0,0.7429,0.2571,0.7429,0.0,0.0,0.0,0.0,83.82
+B0_plain_rag,none,56,56,0,0.6786,0.0,1.0,0.3214,0.0,0.0,0.0,0.0,81.86
+B0_plain_rag,retrieved_document,28,0,28,0.0,0.8571,0.1429,0.8571,0.4643,1.0,0.0,0.0,81.53
+B0_plain_rag,user_query,70,0,70,0.0,1.0,0.0,0.4714,0.4571,1.0,0.0,0.0,82.47
