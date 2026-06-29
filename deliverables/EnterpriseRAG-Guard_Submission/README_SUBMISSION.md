@@ -14,7 +14,7 @@ https://github.com/qiaoqiaoyining-source/enterprise-rag-guard-deploy
 
 ## Package Contents
 
-- `paper/`: final project paper in Word format and editable Markdown content draft.
+- `paper/`: final project paper in LaTeX source and compiled PDF format.
 - `slides/`: final presentation deck. The last slide includes a placeholder for a recorded website demo.
 - `code/`: core reproducible project scripts and dependency file.
 - `data/`: final clean corpus, evaluation questions, and company security profiles.
