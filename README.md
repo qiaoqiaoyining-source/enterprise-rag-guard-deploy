@@ -158,10 +158,19 @@ Then open:
 http://127.0.0.1:8765
 ```
 
-`127.0.0.1` is only for the local computer. The server now binds to `0.0.0.0`
-and prints a LAN URL such as `http://192.168.x.x:8765`; classmates on the same
-network can access that URL if the firewall allows it. For public internet
-access, deploy the app on a server or expose it with a tunnel.
+By default, the product console uses the local verified-evidence generator so
+the benchmark is deterministic and can run without paid model calls. To enable
+DeepSeek generation for the secure agent, set the key only in your local
+environment and start the server with LLM mode enabled:
+
+```bash
+export DEEPSEEK_API_KEY="your-key-here"
+export GUARD_USE_LLM=1
+python3 guard_demo_server.py
+```
+
+Do not commit API keys. The page badge shows either `Guard + DeepSeek` or
+`Guard + 可信证据`, so the active generation mode is visible during demos.
 
 ## Current Experiment Results
 

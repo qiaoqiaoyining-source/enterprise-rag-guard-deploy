@@ -21,6 +21,9 @@ TRANSFER_MATRIX_PATH = Path("outputs/enterprise_rag_guard/summary/transfer_matri
 ATTACK_SURFACE_PATH = Path("outputs/enterprise_rag_guard/summary/attack_surface_summary.csv")
 
 GUARD = build_guard()
+USE_LLM = os.getenv("GUARD_USE_LLM", "").strip().lower() in {"1", "true", "yes"} and bool(
+    os.getenv("DEEPSEEK_API_KEY", "").strip()
+)
 
 TEMPLATES = {
     "zh": {
@@ -406,7 +409,7 @@ HTML = r"""<!doctype html>
               <div class="panel">
                 <div class="agent-head">
                   <div class="agent-title"><span class="avatar secure">S</span><span>安全 Agent</span></div>
-                  <span class="badge safe">已启用 Guard</span>
+                  <span class="badge safe" id="generationMode">已启用 Guard</span>
                 </div>
                 <div class="status" id="secureStatus"></div>
                 <div class="answer" id="secureAnswer">请输入一个公司政策、员工福利、合规或治理相关问题。</div>
@@ -550,6 +553,7 @@ async function api(path, body) {
 async function init() {
   const meta = await api('/api/meta');
   companies = meta.companies;
+  $('#generationMode').textContent = meta.generation_mode === 'DeepSeek' ? 'Guard + DeepSeek' : 'Guard + 可信证据';
   const options = companies.map(c => `<option value="${c.company_id}" data-lang="${c.language}">${escapeHtml(c.label)}</option>`).join('');
   for (const id of ['company', 'injectCompany', 'heroCompany']) $( '#' + id ).innerHTML = options;
   $('#company').value = 'byd';
@@ -781,6 +785,7 @@ class Handler(BaseHTTPRequestHandler):
             self.json(
                 {
                     "companies": company_meta(),
+                    "generation_mode": "DeepSeek" if USE_LLM else "local_verified_evidence",
                     "ablation": read_csv(SUMMARY_PATH),
                     "transfer_matrix": read_csv(TRANSFER_MATRIX_PATH),
                     "attack_surface": read_csv(ATTACK_SURFACE_PATH),
@@ -807,7 +812,13 @@ class Handler(BaseHTTPRequestHandler):
         chunk = injected_chunk(payload)
         guard = EnterpriseRAGGuard(GUARD.chunks + ([chunk] if chunk else []), GUARD.profiles)
         control = guard.answer(question, company_id, defense="B0_plain_rag", risk_threshold=threshold)
-        secure = guard.answer(question, company_id, defense="B7_full_guard", risk_threshold=threshold)
+        secure = guard.answer(
+            question,
+            company_id,
+            defense="B7_full_guard",
+            risk_threshold=threshold,
+            use_llm=USE_LLM,
+        )
         retrieved = []
         for step in secure.get("trace", []):
             if isinstance(step, dict) and "retrieved" in step:
@@ -834,6 +845,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"EnterpriseRAG-Guard product demo: http://127.0.0.1:{PORT}")
+    print(f"Generation mode: {'DeepSeek' if USE_LLM else 'local verified evidence'}")
     server.serve_forever()
 
 
