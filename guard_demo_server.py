@@ -15,7 +15,7 @@ from enterprise_rag_guard import GuardChunk, EnterpriseRAGGuard, build_guard, de
 
 
 HOST = os.getenv("GUARD_HOST", "0.0.0.0")
-PORT = int(os.getenv("GUARD_PORT", "8765"))
+PORT = int(os.getenv("GUARD_PORT") or os.getenv("PORT") or "8765")
 SUMMARY_PATH = Path("outputs/enterprise_rag_guard/summary/ablation_summary.csv")
 TRANSFER_MATRIX_PATH = Path("outputs/enterprise_rag_guard/summary/transfer_matrix.csv")
 ATTACK_SURFACE_PATH = Path("outputs/enterprise_rag_guard/summary/attack_surface_summary.csv")
@@ -856,6 +856,15 @@ def injected_chunk(payload: dict[str, object]) -> GuardChunk | None:
 
 
 class Handler(BaseHTTPRequestHandler):
+    def send_html(self, write_body: bool = True) -> None:
+        body = HTML.replace("__TEMPLATES__", json.dumps(TEMPLATES, ensure_ascii=False)).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if write_body:
+            self.wfile.write(body)
+
     def json(self, data: object, status: int = 200) -> None:
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -867,12 +876,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         if path == "/":
-            body = HTML.replace("__TEMPLATES__", json.dumps(TEMPLATES, ensure_ascii=False)).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+            self.send_html()
             return
         if path == "/api/meta":
             self.json(
@@ -886,6 +890,14 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         self.json({"error": "not_found"}, 404)
+
+    def do_HEAD(self) -> None:
+        path = urlparse(self.path).path
+        if path == "/":
+            self.send_html(write_body=False)
+            return
+        self.send_response(404)
+        self.end_headers()
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path

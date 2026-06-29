@@ -158,6 +158,12 @@ Then open:
 http://127.0.0.1:8765
 ```
 
+`127.0.0.1` is a local address. It is only available on the machine running the
+demo. For a temporary classroom demo, a tunnel can expose the local service, but
+tunnel URLs are not stable enough for a public product demo. For a stable
+everyone-can-open URL, deploy the project to a cloud web service and set the
+model keys as environment variables.
+
 By default, the product console uses the local verified-evidence generator so
 the benchmark is deterministic and can run without paid model calls. For the
 full product demo, copy `.env.example` to `.env` and set local keys only on your
@@ -178,6 +184,34 @@ The optional model-backed stack is:
 
 Do not commit API keys. `.env` is ignored by Git. The page badge shows the
 active stack, for example `Guard + DeepSeek + 双语改写 + 百炼Embedding`.
+
+## Public Deployment
+
+The repository includes production deployment files:
+
+```text
+Dockerfile      # container entrypoint for cloud hosting
+render.yaml     # one-click Render-style web service definition
+.dockerignore   # excludes local secrets and caches from the image
+```
+
+Recommended cloud environment variables:
+
+```text
+DEEPSEEK_API_KEY=...
+DASHSCOPE_API_KEY=...
+GUARD_HOST=0.0.0.0
+GUARD_USE_LLM=1
+GUARD_USE_TRANSLATION=1
+GUARD_USE_EMBEDDING=1
+GUARD_FAST_MODE=1
+GUARD_EMBEDDING_SHORTLIST=20
+```
+
+Cloud platforms usually inject a `PORT` variable automatically. The server reads
+both `GUARD_PORT` and `PORT`, so the same code works locally and on hosted web
+services. Never place API keys in GitHub files; configure them only in the cloud
+provider's private environment-variable settings.
 
 ## Current Experiment Results
 

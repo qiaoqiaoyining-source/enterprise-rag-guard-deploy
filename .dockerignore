@@ -1,0 +1,10 @@
+.git
+.env
+.venv
+venv
+env
+__pycache__
+*.pyc
+.DS_Store
+*.log
+outputs/embedding_cache

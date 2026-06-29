@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: enterprise-rag-guard
+    env: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: GUARD_HOST
+        value: 0.0.0.0
+      - key: GUARD_USE_LLM
+        value: "1"
+      - key: GUARD_USE_TRANSLATION
+        value: "1"
+      - key: GUARD_USE_EMBEDDING
+        value: "1"
+      - key: GUARD_FAST_MODE
+        value: "1"
+      - key: GUARD_EMBEDDING_SHORTLIST
+        value: "20"
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: DASHSCOPE_API_KEY
+        sync: false
