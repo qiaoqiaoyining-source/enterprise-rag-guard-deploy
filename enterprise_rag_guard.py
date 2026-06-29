@@ -665,6 +665,7 @@ class EnterpriseRAGGuard:
         self.chunks = chunks
         self.profiles = profiles or default_profiles()
         self.embedding_reranker = EmbeddingReranker(chunks)
+        self._llm_cache: dict[str, str] = {}
         self.doc_freq: Counter[str] = Counter()
         for chunk in chunks:
             self.doc_freq.update(set(tokenise(chunk.retrieval_text)))
@@ -760,7 +761,8 @@ class EnterpriseRAGGuard:
                 }
             )
         rows.sort(key=lambda item: item["retrieval_score"], reverse=True)
-        shortlist_size = min(len(rows), max(top_k * max(overretrieve, 1) * 2, 30))
+        configured_shortlist = int(os.getenv("GUARD_EMBEDDING_SHORTLIST", "20"))
+        shortlist_size = min(len(rows), max(top_k * max(overretrieve, 1), configured_shortlist))
         shortlist = rows[:shortlist_size]
         embedding_scores = self.embedding_reranker.score_candidates(
             question,
@@ -852,6 +854,9 @@ class EnterpriseRAGGuard:
         api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
         if not api_key:
             return None
+        cache_key = stable_hash(json.dumps([system, user, max_tokens], ensure_ascii=False))
+        if cache_key in self._llm_cache:
+            return self._llm_cache[cache_key]
         model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat"
         endpoint = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/chat/completions").strip()
         payload = {
@@ -870,15 +875,31 @@ class EnterpriseRAGGuard:
             with urlrequest.urlopen(req, timeout=int(os.getenv("DEEPSEEK_TIMEOUT", "60"))) as response:
                 data = json.loads(response.read().decode("utf-8"))
             answer = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-            return answer.strip() or None
+            answer = answer.strip()
+            if answer:
+                self._llm_cache[cache_key] = answer
+            return answer or None
         except (OSError, URLError, json.JSONDecodeError, KeyError):
             return None
+
+    def local_bilingual_query(self, question: str) -> str:
+        lowered = question.lower()
+        expansions: list[str] = []
+        for aliases in QUERY_ALIASES.values():
+            if any(alias in lowered or alias in question for alias in aliases):
+                expansions.extend(alias for alias in aliases if re.search(r"[A-Za-z]", alias))
+        if not expansions:
+            return question
+        return f"{question}\n{' '.join(dict.fromkeys(expansions))}"
 
     def translated_retrieval_query(self, question: str, company_name: str) -> str:
         if os.getenv("GUARD_USE_TRANSLATION", "").strip().lower() not in {"1", "true", "yes"}:
             return question
         if not any("\u4e00" <= char <= "\u9fff" for char in question):
             return question
+        local_query = self.local_bilingual_query(question)
+        if os.getenv("GUARD_FAST_MODE", "1").strip().lower() in {"1", "true", "yes"} and local_query != question:
+            return local_query
         system = (
             "你是企业RAG检索查询改写器。把中文员工问题改写为中英双语检索关键词，"
             "只输出一行，不回答问题，不添加任何政策结论。"

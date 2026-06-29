@@ -21,6 +21,7 @@ TRANSFER_MATRIX_PATH = Path("outputs/enterprise_rag_guard/summary/transfer_matri
 ATTACK_SURFACE_PATH = Path("outputs/enterprise_rag_guard/summary/attack_surface_summary.csv")
 
 GUARD = build_guard()
+ASK_CACHE: dict[str, dict[str, object]] = {}
 USE_LLM = os.getenv("GUARD_USE_LLM", "").strip().lower() in {"1", "true", "yes"} and bool(
     os.getenv("DEEPSEEK_API_KEY", "").strip()
 )
@@ -831,6 +832,23 @@ class Handler(BaseHTTPRequestHandler):
         answer_language = str(payload.get("answer_language", "") or "")
         threshold = float(payload.get("risk_threshold", 0.45))
         chunk = injected_chunk(payload)
+        cache_key = stable_hash(
+            json.dumps(
+                {
+                    "company_id": company_id,
+                    "question": question,
+                    "answer_language": answer_language,
+                    "threshold": threshold,
+                    "injected": bool(chunk),
+                    "mode": generation_mode_label(),
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+        )
+        if chunk is None and cache_key in ASK_CACHE:
+            self.json(ASK_CACHE[cache_key])
+            return
         guard = EnterpriseRAGGuard(GUARD.chunks + ([chunk] if chunk else []), GUARD.profiles)
         control = guard.answer(question, company_id, defense="B0_plain_rag", risk_threshold=threshold)
         secure = guard.answer(
@@ -850,7 +868,10 @@ class Handler(BaseHTTPRequestHandler):
         blocked_ids = set(secure.get("blocked_chunk_ids", []))
         safe = [row for row in retrieved if row.get("chunk_id") in safe_ids]
         blocked = [row for row in retrieved if row.get("chunk_id") in blocked_ids]
-        self.json({"control": control, "secure": secure, "secure_trace": {"safe": safe, "blocked": blocked}})
+        response = {"control": control, "secure": secure, "secure_trace": {"safe": safe, "blocked": blocked}}
+        if chunk is None and len(ASK_CACHE) < 128:
+            ASK_CACHE[cache_key] = response
+        self.json(response)
 
     def handle_onboard(self, payload: dict[str, object]) -> None:
         report = create_demo_tenant(
