@@ -51,7 +51,9 @@ def company_list() -> list[tuple[str, str, str]]:
     rows = list(csv.DictReader(DEFAULT_CORPUS.open(encoding="utf-8")))
     seen: dict[str, tuple[str, str]] = {}
     for row in rows:
-        seen.setdefault(row["company_id"], (row.get("company_name", row["company_id"]), row.get("language", "en")))
+        language = row.get("language", "en")
+        display_name = row.get("company_name_zh") if language == "zh" else row.get("company_name")
+        seen.setdefault(row["company_id"], (display_name or row.get("company_name", row["company_id"]), language))
     preferred_order = ["made_tech", "gitlab", "basecamp", "valve", "tencent", "byd", "huawei"]
     return [(cid, seen[cid][0], seen[cid][1]) for cid in preferred_order if cid in seen]
 

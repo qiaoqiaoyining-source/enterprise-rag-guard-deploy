@@ -159,18 +159,25 @@ http://127.0.0.1:8765
 ```
 
 By default, the product console uses the local verified-evidence generator so
-the benchmark is deterministic and can run without paid model calls. To enable
-DeepSeek generation for the secure agent, set the key only in your local
-environment and start the server with LLM mode enabled:
+the benchmark is deterministic and can run without paid model calls. For the
+full product demo, copy `.env.example` to `.env` and set local keys only on your
+machine:
 
 ```bash
-export DEEPSEEK_API_KEY="your-key-here"
-export GUARD_USE_LLM=1
+cp .env.example .env
 python3 guard_demo_server.py
 ```
 
-Do not commit API keys. The page badge shows either `Guard + DeepSeek` or
-`Guard + 可信证据`, so the active generation mode is visible during demos.
+The optional model-backed stack is:
+
+- DeepSeek chat for grounded answer generation;
+- DeepSeek query rewriting for Chinese-to-English retrieval expansion;
+- Alibaba Cloud Bailian/DashScope `text-embedding-v4` for semantic reranking;
+- EnterpriseRAG-Guard for provenance filtering, quarantine, evidence isolation,
+  citation verification, and repair/refusal.
+
+Do not commit API keys. `.env` is ignored by Git. The page badge shows the
+active stack, for example `Guard + DeepSeek + 双语改写 + 百炼Embedding`.
 
 ## Current Experiment Results
 

@@ -24,6 +24,25 @@ GUARD = build_guard()
 USE_LLM = os.getenv("GUARD_USE_LLM", "").strip().lower() in {"1", "true", "yes"} and bool(
     os.getenv("DEEPSEEK_API_KEY", "").strip()
 )
+USE_TRANSLATION = os.getenv("GUARD_USE_TRANSLATION", "").strip().lower() in {"1", "true", "yes"} and bool(
+    os.getenv("DEEPSEEK_API_KEY", "").strip()
+)
+USE_EMBEDDING = os.getenv("GUARD_USE_EMBEDDING", "").strip().lower() in {"1", "true", "yes"} and bool(
+    os.getenv("DASHSCOPE_API_KEY", "").strip() or os.getenv("BAILIAN_API_KEY", "").strip()
+)
+
+
+def generation_mode_label() -> str:
+    parts = ["Guard"]
+    if USE_LLM:
+        parts.append("DeepSeek")
+    else:
+        parts.append("可信证据")
+    if USE_TRANSLATION:
+        parts.append("双语改写")
+    if USE_EMBEDDING:
+        parts.append("百炼Embedding")
+    return " + ".join(parts)
 
 TEMPLATES = {
     "zh": {
@@ -553,7 +572,7 @@ async function api(path, body) {
 async function init() {
   const meta = await api('/api/meta');
   companies = meta.companies;
-  $('#generationMode').textContent = meta.generation_mode === 'DeepSeek' ? 'Guard + DeepSeek' : 'Guard + 可信证据';
+  $('#generationMode').textContent = meta.generation_mode || 'Guard + 可信证据';
   const options = companies.map(c => `<option value="${c.company_id}" data-lang="${c.language}">${escapeHtml(c.label)}</option>`).join('');
   for (const id of ['company', 'injectCompany', 'heroCompany']) $( '#' + id ).innerHTML = options;
   $('#company').value = 'byd';
@@ -629,6 +648,7 @@ async function run() {
   const payload = {
     company_id: $('#company').value,
     question: $('#question').value,
+    answer_language: $('#language').value,
     risk_threshold: 0.45,
     injected_chunk: injected
   };
@@ -785,7 +805,7 @@ class Handler(BaseHTTPRequestHandler):
             self.json(
                 {
                     "companies": company_meta(),
-                    "generation_mode": "DeepSeek" if USE_LLM else "local_verified_evidence",
+                    "generation_mode": generation_mode_label(),
                     "ablation": read_csv(SUMMARY_PATH),
                     "transfer_matrix": read_csv(TRANSFER_MATRIX_PATH),
                     "attack_surface": read_csv(ATTACK_SURFACE_PATH),
@@ -808,6 +828,7 @@ class Handler(BaseHTTPRequestHandler):
     def handle_ask(self, payload: dict[str, object]) -> None:
         company_id = str(payload.get("company_id", "tencent"))
         question = str(payload.get("question", TEMPLATES["zh"]["normal"]))
+        answer_language = str(payload.get("answer_language", "") or "")
         threshold = float(payload.get("risk_threshold", 0.45))
         chunk = injected_chunk(payload)
         guard = EnterpriseRAGGuard(GUARD.chunks + ([chunk] if chunk else []), GUARD.profiles)
@@ -818,6 +839,8 @@ class Handler(BaseHTTPRequestHandler):
             defense="B7_full_guard",
             risk_threshold=threshold,
             use_llm=USE_LLM,
+            use_translation=USE_TRANSLATION,
+            answer_language=answer_language if answer_language in {"zh", "en"} else None,
         )
         retrieved = []
         for step in secure.get("trace", []):
@@ -845,7 +868,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"EnterpriseRAG-Guard product demo: http://127.0.0.1:{PORT}")
-    print(f"Generation mode: {'DeepSeek' if USE_LLM else 'local verified evidence'}")
+    print(f"Generation mode: {generation_mode_label()}")
     server.serve_forever()
 
 
